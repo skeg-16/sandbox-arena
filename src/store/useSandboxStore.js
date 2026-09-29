@@ -27,6 +27,12 @@ export const useSandboxStore = create((set, get) => ({
   graphicsQuality: 'HIGH', // LOW | MEDIUM | HIGH | ULTRA
   fpsWarning: false,
 
+  // Multi-Deploy Formation Stamp Mode
+  formationMode: 'SINGLE', // SINGLE | LINE_3 | WALL_5
+
+  // Post-Battle Accolades & MVP
+  battleAwards: null,
+
   // Campaign State
   currentLevelIndex: 0,
   campaignGoldBudget: 1000,
@@ -44,6 +50,8 @@ export const useSandboxStore = create((set, get) => ({
   setActiveTeam: (teamId) => set({ activeTeam: teamId }),
   setSelectedUnitType: (unitTypeId) => set({ selectedUnitType: unitTypeId }),
   setSelectedTrait: (traitId) => set({ selectedTrait: traitId }),
+  setFormationMode: (mode) => set({ formationMode: mode }),
+  setBattleAwards: (awards) => set({ battleAwards: awards }),
   setGameSpeed: (speed) => set({ gameSpeed: speed }),
   setEnvironment: (envId) => set({ activeEnvironment: envId }),
   setCameraMode: (mode) => set({ cameraMode: mode }),
@@ -112,6 +120,7 @@ export const useSandboxStore = create((set, get) => ({
     redInitialCount: 0,
     totalUnitsPlaced: 0,
     unitCapWarning: false,
+    battleAwards: null,
     remainingGold: state.campaignGoldBudget
   }))
 }));

@@ -93,10 +93,12 @@ export const UnitTray = () => {
     remainingGold,
     campaignGoldBudget,
     enforceDeploymentZones,
+    formationMode,
     setActiveTeam,
     setSelectedUnitType,
     setSelectedTrait,
-    setEnforceDeploymentZones
+    setEnforceDeploymentZones,
+    setFormationMode
   } = useSandboxStore();
 
   // Sidebar starts open on desktop, and closed on mobile to prevent clutter
@@ -483,6 +485,40 @@ export const UnitTray = () => {
                 </div>
               </div>
 
+              {/* Multi-Deploy Formation Stamp Selector */}
+              <div className="flex flex-col gap-1 pt-1 border-t border-gold-800/30">
+                <div className="flex items-center justify-between text-[10px] text-parchment-400 font-cinzel">
+                  <span>Formation Stamp:</span>
+                  <span className="text-gold-300 font-bold font-mono">
+                    {formationMode === 'WALL_5' ? 'Phalanx Wall (x5)' : (formationMode === 'LINE_3' ? 'Line Rank (x3)' : 'Single (x1)')}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 bg-obsidian-900/90 p-1 rounded-xl border border-gold-800/40">
+                  {[
+                    { id: 'SINGLE', label: '1x Single', desc: '1 Unit' },
+                    { id: 'LINE_3', label: '3x Line', desc: '3 Units' },
+                    { id: 'WALL_5', label: '5x Wall', desc: '5 Units' }
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => {
+                        setFormationMode(f.id);
+                        sandboxEngine.placementManager?.setFormation();
+                        soundSystem.playSwordSlash();
+                      }}
+                      className={`py-1.5 px-1 rounded-lg text-center transition-all ${
+                        formationMode === f.id
+                          ? 'bg-gold-500 text-obsidian-950 font-bold shadow-ember'
+                          : 'text-parchment-400 hover:text-parchment-200 hover:bg-obsidian-800'
+                      }`}
+                    >
+                      <div className="text-[10px] font-cinzel font-bold leading-tight">{f.label}</div>
+                      <div className="text-[8px] font-mono opacity-80 leading-tight">{f.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Ready to Deploy Button */}
               <button
                 onClick={() => {
@@ -503,7 +539,7 @@ export const UnitTray = () => {
       {/* 2. MINIMAL FLOATING BOTTOM DOCK: Keeps the 3D battlefield open! */}
       {/* ═══════════════════════════════════════════════════════════ */}
       <div className="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-20 pointer-events-auto select-none">
-        <div className="fantasy-panel px-3 py-1.5 rounded-full backdrop-blur-md bg-obsidian-950/85 border border-gold-600/40 shadow-2xl flex items-center gap-2.5 animate-fade-in-up">
+        <div className="fantasy-panel px-3 py-1.5 rounded-full backdrop-blur-md bg-obsidian-950/85 border border-gold-600/40 shadow-2xl flex items-center gap-2 animate-fade-in-up">
 
           {/* Quick Team Toggle */}
           <button
@@ -541,6 +577,32 @@ export const UnitTray = () => {
               </span>
             </div>
           </button>
+
+          {/* Quick Formation Stamp Switcher */}
+          <div className="flex items-center gap-0.5 bg-obsidian-900/90 p-0.5 rounded-full border border-gold-800/40 font-mono text-[9px]">
+            {[
+              { id: 'SINGLE', label: 'x1', title: 'Single Unit' },
+              { id: 'LINE_3', label: 'x3', title: 'Line Formation (3 Units)' },
+              { id: 'WALL_5', label: 'x5', title: 'Phalanx Wall (5 Units)' }
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => {
+                  setFormationMode(f.id);
+                  sandboxEngine.placementManager?.setFormation();
+                  soundSystem.playSwordSlash();
+                }}
+                className={`px-1.5 py-0.5 rounded-full font-bold transition-all ${
+                  formationMode === f.id
+                    ? 'bg-gold-500 text-obsidian-950 shadow-ember font-black'
+                    : 'text-parchment-400 hover:text-parchment-200'
+                }`}
+                title={f.title}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
           {/* Quick Change Unit Button */}
           <button

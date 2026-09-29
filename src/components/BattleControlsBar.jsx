@@ -81,17 +81,17 @@ export const BattleControlsBar = ({ onOpenPresets }) => {
       <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
         <FastForward className="w-3.5 h-3.5 text-slate-400 ml-1.5" />
 
-        {[0.5, 1.0, 2.0].map((speed) => (
+        {[0.25, 0.5, 1.0, 2.0].map((speed) => (
           <button
             key={speed}
             onClick={() => setGameSpeed(speed)}
             className={`px-2 py-1 rounded-lg text-xs font-bold font-mono transition-all ${
               gameSpeed === speed
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-black'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            {speed}x
+            {speed === 0.25 ? '0.25x' : `${speed}x`}
           </button>
         ))}
       </div>

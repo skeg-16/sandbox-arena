@@ -44,6 +44,11 @@ export class ActiveRagdollUnit {
     this.targetStructure = null;
     this.isGarrisoned = false;
 
+    // Combat Performance & Accolades Tracking
+    this.kills = 0;
+    this.damageDealt = 0;
+    this.damageAbsorbed = 0;
+
     // Ragdoll / Physics properties
     this.body = null;
     this.collider = null;
@@ -2658,7 +2663,8 @@ export class ActiveRagdollUnit {
           { x: myPos.x, y: myPos.y + 1.0, z: myPos.z },
           targetPos,
           damage,
-          this.teamId
+          this.teamId,
+          this
         );
         setTimeout(() => { if (this.rightArm) this.rightArm.rotation.x = 0; }, 120);
       } else {
@@ -2864,7 +2870,8 @@ export class ActiveRagdollUnit {
         { x: startPos.x, y: startPos.y + 1.2, z: startPos.z },
         tPos,
         damage,
-        this.teamId
+        this.teamId,
+        this
       );
 
       // Tactical step back if enemy gets too close (< 5.0m)
@@ -2891,7 +2898,8 @@ export class ActiveRagdollUnit {
         tPos,
         damage,
         this.typeConfig.aoeRadius,
-        this.teamId
+        this.teamId,
+        this
       );
 
       setTimeout(() => {
@@ -2911,7 +2919,8 @@ export class ActiveRagdollUnit {
           tPos,
           damage,
           this.typeConfig.aoeRadius,
-          this.teamId
+          this.teamId,
+          this
         );
       }
 
@@ -3339,11 +3348,28 @@ export class ActiveRagdollUnit {
     let actualDamage = amount;
     if (this.traitId === 'iron') {
       actualDamage *= 0.75;
+      // Visual feedback: Iron Armor blocked popup
+      if (Math.random() < 0.35 && this.vfxManager && this.body) {
+        const p = this.body.translation();
+        this.vfxManager.spawnFloatingDamageText(
+          new THREE.Vector3(p.x, p.y + 1.8, p.z),
+          "🛡️ BLOCKED!"
+        );
+      }
     }
 
     // Bosses have heavy poise & knockback dampening
     if (this.typeConfig && this.typeConfig.isBoss) {
       impactForce *= 0.15;
+    }
+
+    // Performance & Accolades Tracking
+    this.damageAbsorbed = (this.damageAbsorbed || 0) + actualDamage;
+    if (attackerUnit) {
+      attackerUnit.damageDealt = (attackerUnit.damageDealt || 0) + actualDamage;
+      if (this.health - actualDamage <= 0 && !this.isDead) {
+        attackerUnit.kills = (attackerUnit.kills || 0) + 1;
+      }
     }
 
     this.health -= actualDamage;
@@ -3374,10 +3400,11 @@ export class ActiveRagdollUnit {
 
     if (this.vfxManager && this.body) {
       const pos = this.body.translation();
+      const isCrit = actualDamage > 55 || (attackerUnit && attackerUnit.traitId === 'fire');
       this.vfxManager.spawnFloatingDamageText(
         new THREE.Vector3(pos.x, pos.y, pos.z),
         actualDamage,
-        actualDamage > 60
+        isCrit
       );
     }
 
@@ -3413,6 +3440,13 @@ export class ActiveRagdollUnit {
   heal(amount) {
     if (this.isDead) return;
     this.health = Math.min(this.maxHealth, this.health + amount);
+    if (this.vfxManager && this.body && amount >= 5) {
+      const p = this.body.translation();
+      this.vfxManager.spawnFloatingDamageText(
+        new THREE.Vector3(p.x, p.y + 1.6, p.z),
+        `+${Math.round(amount)}`
+      );
+    }
   }
 
   triggerKnockdown(duration = 1.5) {
@@ -3421,6 +3455,13 @@ export class ActiveRagdollUnit {
     this.isKnockedDown = true;
     this.knockdownTimer = duration;
     this.body.setEnabledRotations(true, true, true, true);
+    if (this.vfxManager && this.body && Math.random() < 0.5) {
+      const p = this.body.translation();
+      this.vfxManager.spawnFloatingDamageText(
+        new THREE.Vector3(p.x, p.y + 1.8, p.z),
+        "KNOCKDOWN!"
+      );
+    }
   }
 
   die() {

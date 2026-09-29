@@ -27,6 +27,10 @@ export class PlacementManager {
     this.setPlacementConfig(unitTypeId, teamId);
   }
 
+  setFormation() {
+    this._rebuildGhost();
+  }
+
   _rebuildGhost() {
     if (this.ghostMesh) {
       this.scene.remove(this.ghostMesh);
@@ -40,41 +44,52 @@ export class PlacementManager {
 
     const teamConfig = TEAMS[this.activeTeamId.toUpperCase()] || TEAMS.BLUE;
     const scale = unitConfig.scale || 1.0;
+    const formationMode = useSandboxStore.getState().formationMode || 'SINGLE';
+
+    const offsetsZ = formationMode === 'WALL_5'
+      ? [-3.6, -1.8, 0, 1.8, 3.6]
+      : (formationMode === 'LINE_3' ? [-1.8, 0, 1.8] : [0]);
 
     const ghostGroup = new THREE.Group();
-
-    // Translucent ghostly capsule
-    const ghostMat = new THREE.MeshBasicMaterial({
-      color: teamConfig.color,
-      transparent: true,
-      opacity: 0.5,
-      wireframe: true
-    });
-
-    const capsuleGeo = new THREE.CylinderGeometry(0.4 * scale, 0.4 * scale, 1.2 * scale, 8);
-    const capsule = new THREE.Mesh(capsuleGeo, ghostMat);
-    capsule.position.y = 0.6 * scale;
-    ghostGroup.add(capsule);
-
-    // Placement ring indicator below ghost
-    const ringGeo = new THREE.RingGeometry(0.6 * scale, 0.8 * scale, 16);
-    const ringMat = new THREE.MeshBasicMaterial({ color: teamConfig.color, side: THREE.DoubleSide });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.03;
-    ghostGroup.add(ring);
-
-    // Direction arrow on ground ring indicating facing direction
-    const arrowGeo = new THREE.ConeGeometry(0.2 * scale, 0.45 * scale, 4);
-    const arrowMat = new THREE.MeshBasicMaterial({ color: teamConfig.color });
-    const arrow = new THREE.Mesh(arrowGeo, arrowMat);
-    arrow.rotation.x = -Math.PI / 2;
-    arrow.position.set(0, 0.05, 0.75 * scale);
-    ghostGroup.add(arrow);
-
-    // Facing orientation: Blue faces East (+X), Red faces West (-X)
+    this.ghostMaterials = [];
     this.teamColor = teamConfig.color;
-    this.ghostMaterials = [ghostMat, ringMat, arrowMat];
+
+    offsetsZ.forEach((offsetZ) => {
+      const subGroup = new THREE.Group();
+      subGroup.position.set(0, 0, offsetZ);
+
+      // Translucent ghostly capsule
+      const ghostMat = new THREE.MeshBasicMaterial({
+        color: teamConfig.color,
+        transparent: true,
+        opacity: 0.5,
+        wireframe: true
+      });
+
+      const capsuleGeo = new THREE.CylinderGeometry(0.4 * scale, 0.4 * scale, 1.2 * scale, 8);
+      const capsule = new THREE.Mesh(capsuleGeo, ghostMat);
+      capsule.position.y = 0.6 * scale;
+      subGroup.add(capsule);
+
+      // Placement ring indicator below ghost
+      const ringGeo = new THREE.RingGeometry(0.6 * scale, 0.8 * scale, 16);
+      const ringMat = new THREE.MeshBasicMaterial({ color: teamConfig.color, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.03;
+      subGroup.add(ring);
+
+      // Direction arrow on ground ring indicating facing direction
+      const arrowGeo = new THREE.ConeGeometry(0.2 * scale, 0.45 * scale, 4);
+      const arrowMat = new THREE.MeshBasicMaterial({ color: teamConfig.color });
+      const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+      arrow.rotation.x = -Math.PI / 2;
+      arrow.position.set(0, 0.05, 0.75 * scale);
+      subGroup.add(arrow);
+
+      this.ghostMaterials.push(ghostMat, ringMat, arrowMat);
+      ghostGroup.add(subGroup);
+    });
 
     this.ghostMesh = ghostGroup;
     this.ghostMesh.visible = false;

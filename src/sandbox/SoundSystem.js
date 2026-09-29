@@ -2,6 +2,14 @@ class SoundSynthesizer {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.isWarDrumsPlaying = false;
+    this.warDrumsTimer = null;
+    this.warDroneOsc1 = null;
+    this.warDroneOsc2 = null;
+    this.warDroneFilter = null;
+    this.warDroneGain = null;
+    this.drumMasterGain = null;
+    this.beatIndex = 0;
   }
 
   _initCtx() {
@@ -18,7 +26,226 @@ class SoundSynthesizer {
 
   toggleMute() {
     this.muted = !this.muted;
+    if (this.muted) {
+      if (this.drumMasterGain && this.ctx) {
+        this.drumMasterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      }
+      if (this.warDroneGain && this.ctx) {
+        this.warDroneGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      }
+    } else {
+      if (this.drumMasterGain && this.ctx) {
+        this.drumMasterGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+      }
+      if (this.warDroneGain && this.ctx) {
+        this.warDroneGain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+      }
+    }
     return this.muted;
+  }
+
+  // ═══ PROCEDURAL WAR DRUMS & AMBIENT BATTLE MUSIC (WEB AUDIO) ═══
+
+  startWarDrums() {
+    if (this.isWarDrumsPlaying) return;
+    this._initCtx();
+    if (!this.ctx) return;
+
+    this.isWarDrumsPlaying = true;
+    this.beatIndex = 0;
+
+    // Master gains
+    this.drumMasterGain = this.ctx.createGain();
+    this.drumMasterGain.gain.setValueAtTime(this.muted ? 0 : 0.35, this.ctx.currentTime);
+    this.drumMasterGain.connect(this.ctx.destination);
+
+    // Cinematic Low Drone Bed (Ancient War Horn Drone)
+    try {
+      this.warDroneGain = this.ctx.createGain();
+      this.warDroneGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      this.warDroneGain.gain.linearRampToValueAtTime(this.muted ? 0 : 0.14, this.ctx.currentTime + 1.2);
+
+      this.warDroneFilter = this.ctx.createBiquadFilter();
+      this.warDroneFilter.type = 'lowpass';
+      this.warDroneFilter.frequency.setValueAtTime(260, this.ctx.currentTime);
+
+      this.warDroneOsc1 = this.ctx.createOscillator();
+      this.warDroneOsc1.type = 'sawtooth';
+      this.warDroneOsc1.frequency.setValueAtTime(55, this.ctx.currentTime); // A1
+
+      this.warDroneOsc2 = this.ctx.createOscillator();
+      this.warDroneOsc2.type = 'triangle';
+      this.warDroneOsc2.frequency.setValueAtTime(82.4, this.ctx.currentTime); // E2 fifth
+
+      this.warDroneOsc1.connect(this.warDroneFilter);
+      this.warDroneOsc2.connect(this.warDroneFilter);
+      this.warDroneFilter.connect(this.warDroneGain);
+      this.warDroneGain.connect(this.ctx.destination);
+
+      this.warDroneOsc1.start();
+      this.warDroneOsc2.start();
+    } catch (e) {
+      console.warn("War drone start error:", e);
+    }
+
+    // War Horn blast to inaugurate battle
+    this.playBattleHorn();
+
+    // Rhythmic Drum Sequencer Loop (~115 BPM 16th/8th note grid)
+    const stepIntervalMs = 175;
+    this.warDrumsTimer = setInterval(() => {
+      if (!this.isWarDrumsPlaying) return;
+      this._stepWarBeat();
+    }, stepIntervalMs);
+  }
+
+  _stepWarBeat() {
+    if (this.muted || !this.ctx || this.ctx.state !== 'running') {
+      this.beatIndex = (this.beatIndex + 1) % 16;
+      return;
+    }
+
+    const step = this.beatIndex;
+    const now = this.ctx.currentTime;
+
+    // Pattern for 16-step measures:
+    // Heavy Taiko on 0, 4, 8, 12 with syncopation on 6, 10, 14
+    if (step === 0) {
+      this._triggerTaikoDrum(now, 120, 36, 0.42, 0.35); // Accent downbeat
+    } else if (step === 4) {
+      this._triggerTaikoDrum(now, 105, 40, 0.32, 0.28);
+    } else if (step === 6) {
+      this._triggerTaikoDrum(now, 130, 45, 0.22, 0.18); // Syncopated slap
+    } else if (step === 8) {
+      this._triggerTaikoDrum(now, 115, 38, 0.38, 0.32);
+      this._triggerRimshot(now, 0.12);
+    } else if (step === 10) {
+      this._triggerTaikoDrum(now, 95, 42, 0.25, 0.20);
+    } else if (step === 12) {
+      this._triggerTaikoDrum(now, 110, 38, 0.35, 0.30);
+    } else if (step === 14) {
+      this._triggerTaikoDrum(now, 140, 48, 0.28, 0.16); // Fast double
+    } else if (step === 15) {
+      this._triggerTaikoDrum(now, 130, 42, 0.24, 0.16);
+      this._triggerRimshot(now, 0.14);
+    } else if (step % 2 === 0) {
+      // Subtle marching rim pulse on off-beats
+      this._triggerRimshot(now, 0.04);
+    }
+
+    this.beatIndex = (this.beatIndex + 1) % 16;
+  }
+
+  _triggerTaikoDrum(time, startFreq, endFreq, peakGain, duration) {
+    if (!this.ctx || !this.drumMasterGain) return;
+
+    // Body of the war drum (Pitch-dropping sine wave)
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(startFreq, time);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, time + duration);
+
+    gain.gain.setValueAtTime(peakGain, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+    osc.connect(gain);
+    gain.connect(this.drumMasterGain);
+
+    osc.start(time);
+    osc.stop(time + duration);
+
+    // Leather drumhead slap impact (short lowpassed noise)
+    try {
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.04);
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
+      }
+
+      const whiteNoise = this.ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(700, time);
+
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(peakGain * 0.5, time);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+      whiteNoise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.drumMasterGain);
+
+      whiteNoise.start(time);
+    } catch (e) {
+      // AudioBuffer creation fallback
+    }
+  }
+
+  _triggerRimshot(time, gainLevel) {
+    if (!this.ctx || !this.drumMasterGain) return;
+    try {
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.03);
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1800, time);
+      filter.Q.setValueAtTime(4.0, time);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(gainLevel, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.drumMasterGain);
+
+      noise.start(time);
+    } catch (e) {}
+  }
+
+  stopWarDrums() {
+    this.isWarDrumsPlaying = false;
+    if (this.warDrumsTimer) {
+      clearInterval(this.warDrumsTimer);
+      this.warDrumsTimer = null;
+    }
+
+    if (this.ctx) {
+      const now = this.ctx.currentTime;
+      if (this.drumMasterGain) {
+        this.drumMasterGain.gain.linearRampToValueAtTime(0, now + 0.5);
+      }
+      if (this.warDroneGain) {
+        this.warDroneGain.gain.linearRampToValueAtTime(0, now + 0.5);
+      }
+      setTimeout(() => {
+        try {
+          if (this.warDroneOsc1) {
+            this.warDroneOsc1.stop();
+            this.warDroneOsc1.disconnect();
+            this.warDroneOsc1 = null;
+          }
+          if (this.warDroneOsc2) {
+            this.warDroneOsc2.stop();
+            this.warDroneOsc2.disconnect();
+            this.warDroneOsc2 = null;
+          }
+        } catch (e) {}
+      }, 550);
+    }
   }
 
   // ═══ UI SOUND CUES ═══

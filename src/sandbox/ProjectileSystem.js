@@ -10,7 +10,7 @@ export class ProjectileSystem {
     this.projectiles = [];
   }
 
-  spawnArrow(startPos, targetPos, damage, attackerTeamId) {
+  spawnArrow(startPos, targetPos, damage, attackerTeamId, sourceUnit = null) {
     const geo = new THREE.CylinderGeometry(0.04, 0.04, 1.2, 5);
     const mat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
     const mesh = new THREE.Mesh(geo, mat);
@@ -36,11 +36,12 @@ export class ProjectileSystem {
       vel: new THREE.Vector3(vx, vy, vz),
       damage,
       teamId: attackerTeamId,
+      sourceUnit,
       life: 5.0
     });
   }
 
-  spawnFireball(startPos, targetPos, damage, aoeRadius, attackerTeamId) {
+  spawnFireball(startPos, targetPos, damage, aoeRadius, attackerTeamId, sourceUnit = null) {
     const geo = new THREE.SphereGeometry(0.45, 12, 12);
     const mat = new THREE.MeshStandardMaterial({
       color: 0xef4444,
@@ -71,11 +72,12 @@ export class ProjectileSystem {
       damage,
       aoeRadius,
       teamId: attackerTeamId,
+      sourceUnit,
       life: 6.0
     });
   }
 
-  spawnCatapultBoulder(startPos, targetPos, damage, aoeRadius, attackerTeamId) {
+  spawnCatapultBoulder(startPos, targetPos, damage, aoeRadius, attackerTeamId, sourceUnit = null) {
     const geo = new THREE.DodecahedronGeometry(0.9, 1);
     const mat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, flatShading: true });
     const mesh = new THREE.Mesh(geo, mat);
@@ -101,11 +103,12 @@ export class ProjectileSystem {
       damage,
       aoeRadius,
       teamId: attackerTeamId,
+      sourceUnit,
       life: 7.0
     });
   }
 
-  spawnShuriken(startPos, targetPos, damage, attackerTeamId) {
+  spawnShuriken(startPos, targetPos, damage, attackerTeamId, sourceUnit = null) {
     const geo = new THREE.CylinderGeometry(0.18, 0.18, 0.03, 4);
     const mat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
     const mesh = new THREE.Mesh(geo, mat);
@@ -131,11 +134,12 @@ export class ProjectileSystem {
       vel: new THREE.Vector3(vx, vy, vz),
       damage,
       teamId: attackerTeamId,
+      sourceUnit,
       life: 4.0
     });
   }
 
-  spawnIceShard(startPos, targetPos, damage, attackerTeamId) {
+  spawnIceShard(startPos, targetPos, damage, attackerTeamId, sourceUnit = null) {
     const geo = new THREE.ConeGeometry(0.12, 0.7, 5);
     const mat = new THREE.MeshStandardMaterial({
       color: 0x7dd3fc,
@@ -166,6 +170,7 @@ export class ProjectileSystem {
       vel: new THREE.Vector3(vx, vy, vz),
       damage,
       teamId: attackerTeamId,
+      sourceUnit,
       life: 5.0
     });
   }
@@ -229,7 +234,7 @@ export class ProjectileSystem {
         const dist = p.pos.distanceTo(new THREE.Vector3(unitPos.x, unitPos.y, unitPos.z));
 
         if (dist < 1.6) {
-          unit.takeDamage(p.damage, p.pos, p.type === 'SHURIKEN' ? 120 : 150);
+          unit.takeDamage(p.damage, p.pos, p.type === 'SHURIKEN' ? 120 : 150, p.sourceUnit);
           if (this.vfxManager) {
             this.vfxManager.spawnHitSparks(p.pos, p.type === 'SHURIKEN' ? 0xe2e8f0 : 0xfacc15, 8);
           }
@@ -244,7 +249,7 @@ export class ProjectileSystem {
         const dist = p.pos.distanceTo(new THREE.Vector3(unitPos.x, unitPos.y, unitPos.z));
 
         if (dist < 1.8) {
-          unit.takeDamage(p.damage, p.pos, 180);
+          unit.takeDamage(p.damage, p.pos, 180, p.sourceUnit);
           unit.triggerKnockdown(0.8); // Short freeze stagger
           if (this.vfxManager) {
             this.vfxManager.spawnHitSparks(p.pos, 0x38bdf8, 10);
@@ -278,7 +283,7 @@ export class ProjectileSystem {
         if (dist <= radius) {
           const factor = 1.0 - dist / radius;
           const damage = p.damage * factor;
-          unit.takeDamage(damage, p.pos, baseForce * factor);
+          unit.takeDamage(damage, p.pos, baseForce * factor, p.sourceUnit);
           unit.triggerKnockdown(2.0); // Send surrounding units ragdoll flying!
         }
       });

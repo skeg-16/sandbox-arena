@@ -126,35 +126,120 @@ export class VFXManager {
 
   spawnFloatingDamageText(pos, damage, isCrit = false) {
     const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 64;
+    canvas.width = 256;
+    canvas.height = 128;
     const ctx = canvas.getContext('2d');
 
-    const text = Math.round(damage).toString();
-    ctx.font = isCrit ? '900 36px sans-serif' : 'bold 28px sans-serif';
+    let displayText = '';
+    let textColor = '#facc15';
+    let strokeColor = '#0f172a';
+    let fontSize = 38;
+    let isSpecial = false;
+
+    if (typeof damage === 'string') {
+      displayText = damage;
+      isSpecial = true;
+      if (damage.includes('CRIT')) {
+        textColor = '#f43f5e';
+        fontSize = 44;
+      } else if (damage.includes('BLOCK')) {
+        textColor = '#38bdf8';
+        fontSize = 40;
+      } else if (damage.includes('KNOCK') || damage.includes('STUN')) {
+        textColor = '#fb923c';
+        fontSize = 40;
+      } else if (damage.includes('ENRAGED')) {
+        textColor = '#ef4444';
+        fontSize = 44;
+      } else if (damage.startsWith('+')) {
+        textColor = '#22c55e';
+        fontSize = 38;
+      }
+    } else {
+      const rounded = Math.round(damage);
+      if (isCrit) {
+        displayText = `⚡ ${rounded} CRIT!`;
+        textColor = '#fbbf24';
+        strokeColor = '#881337';
+        fontSize = 46;
+      } else {
+        displayText = `-${rounded}`;
+        textColor = rounded > 60 ? '#f87171' : '#facc15';
+        fontSize = rounded > 60 ? 40 : 34;
+      }
+    }
+
+    // Render Crisp 2D Canvas Text
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`;
 
-    ctx.fillStyle = isCrit ? '#ef4444' : '#facc15';
-    ctx.shadowColor = '#000000';
-    ctx.shadowBlur = 6;
-    ctx.fillText(isCrit ? `${text}!` : text, 64, 32);
+    // Drop shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 3;
+
+    // Thick dark stroke for AAA contrast
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 7;
+    ctx.strokeText(displayText, 128, 64);
+
+    // Inner bright gradient fill
+    const grad = ctx.createLinearGradient(0, 64 - fontSize / 2, 0, 64 + fontSize / 2);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.35, textColor);
+    grad.addColorStop(1, textColor);
+    ctx.fillStyle = grad;
+    ctx.fillText(displayText, 128, 64);
 
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false
+    });
     const sprite = new THREE.Sprite(spriteMat);
 
-    const scale = isCrit ? 2.2 : 1.5;
-    sprite.scale.set(scale, scale * 0.5, 1);
-    sprite.position.set(pos.x + (Math.random() - 0.5) * 0.5, pos.y + 1.2, pos.z + (Math.random() - 0.5) * 0.5);
+    const baseScale = isCrit || isSpecial ? 2.5 : 1.8;
+    sprite.scale.set(baseScale, baseScale * 0.5, 1);
+    sprite.position.set(
+      pos.x + (Math.random() - 0.5) * 0.4,
+      pos.y + 1.4,
+      pos.z + (Math.random() - 0.5) * 0.4
+    );
 
     this.scene.add(sprite);
+
+    // Subtle drift velocity
+    const vx = (Math.random() - 0.5) * 0.6;
+    const vy = isCrit ? 2.6 : 2.0;
+    const vz = (Math.random() - 0.5) * 0.6;
+
     this.floatingTexts.push({
       sprite,
       texture,
-      life: 0.8,
-      maxLife: 0.8
+      vx,
+      vy,
+      vz,
+      baseScale,
+      life: 0.85,
+      maxLife: 0.85
     });
+
+    // Screen Shake & Mobile Haptics for heavy hits / crits
+    if (isCrit || (typeof damage === 'number' && damage > 50)) {
+      if (this.threeScene && typeof this.threeScene.shakeCamera === 'function') {
+        this.threeScene.shakeCamera(isCrit ? 0.32 : 0.22);
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+          navigator.vibrate(isCrit ? [40, 25, 40] : 25);
+        } catch (e) {}
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -1193,10 +1278,24 @@ export class VFXManager {
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       const ft = this.floatingTexts[i];
       ft.life -= dt;
-      ft.sprite.position.y += dt * 2.0;
 
-      const progress = ft.life / ft.maxLife;
-      ft.sprite.material.opacity = Math.max(0, progress);
+      // 3D velocity drift with upward drag
+      ft.sprite.position.x += (ft.vx || 0) * dt;
+      ft.sprite.position.y += (ft.vy || 2.0) * dt;
+      ft.sprite.position.z += (ft.vz || 0) * dt;
+      ft.vy = Math.max(0.6, (ft.vy || 2.0) - dt * 2.2);
+
+      const progress = ft.life / ft.maxLife; // 1.0 -> 0.0
+
+      // Scale pop: expands on spawn, then gently settles
+      const pop = progress > 0.85
+        ? 0.7 + ((1.0 - progress) / 0.15) * 0.45
+        : Math.min(1.0, progress * 1.3);
+      const bScale = ft.baseScale || 1.8;
+      ft.sprite.scale.set(bScale * pop, bScale * 0.5 * pop, 1);
+
+      // Smooth alpha fadeout
+      ft.sprite.material.opacity = Math.max(0, Math.min(1.0, progress * 1.8));
 
       if (ft.life <= 0) {
         this.scene.remove(ft.sprite);

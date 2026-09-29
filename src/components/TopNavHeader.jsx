@@ -24,7 +24,9 @@ import {
   Castle,
   Sparkles,
   AlertTriangle,
-  Unlock
+  Unlock,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import { BATTLEGROUND_MAPS } from '../sandbox/MapConfigs';
 
@@ -56,6 +58,24 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
   const [isMuted, setIsMuted] = useState(soundSystem.muted);
   const [goreMode, setGoreMode] = useState('ULTRA');
   const [battleTimer, setBattleTimer] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+    soundSystem.playSwordSlash();
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -481,11 +501,16 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
 
                 {/* Simulation Speed */}
                 <div className="flex flex-col gap-1.5">
-                  <span className="font-cinzel text-[10px] text-parchment-300 flex items-center gap-1.5">
-                    <FastForward className="w-3 h-3 text-gold-400" /> Time Scale
-                  </span>
-                  <div className="grid grid-cols-3 gap-1 bg-obsidian-950 p-1 rounded-xl border border-gold-800/20 font-mono">
-                    {[0.5, 1.0, 2.0].map((speed) => (
+                  <div className="flex items-center justify-between">
+                    <span className="font-cinzel text-[10px] text-parchment-300 flex items-center gap-1.5">
+                      <FastForward className="w-3 h-3 text-gold-400" /> Time Scale
+                    </span>
+                    {gameSpeed === 0.25 && (
+                      <span className="text-[9px] font-mono text-cyan-400 font-bold animate-pulse">Matrix Slow-Mo</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1 bg-obsidian-950 p-1 rounded-xl border border-gold-800/20 font-mono">
+                    {[0.25, 0.5, 1.0, 2.0].map((speed) => (
                       <button
                         key={speed}
                         onClick={() => {
@@ -494,11 +519,11 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
                         }}
                         className={`py-1 rounded-lg text-[10px] font-cinzel font-bold transition-all text-center ${
                           gameSpeed === speed
-                            ? 'bg-gold-500 text-obsidian-950 shadow-ember'
+                            ? 'bg-gold-500 text-obsidian-950 shadow-ember font-black'
                             : 'text-parchment-400 hover:text-parchment-200'
                         }`}
                       >
-                        {speed}x
+                        {speed === 0.25 ? '0.25x' : `${speed}x`}
                       </button>
                     ))}
                   </div>
@@ -554,6 +579,20 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
               </div>
             )}
           </div>
+
+          {/* Native Fullscreen Button */}
+          <button
+            onClick={handleToggleFullscreen}
+            className="btn-fantasy-secondary px-2 md:px-2.5 py-1 md:py-1.5 text-[11px] flex items-center gap-1 transition-all"
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Enter Fullscreen (Maximize Battlefield)"}
+          >
+            {isFullscreen ? (
+              <Minimize className="w-3.5 h-3.5 text-gold-400" />
+            ) : (
+              <Maximize className="w-3.5 h-3.5 text-gold-400" />
+            )}
+            <span className="hidden lg:inline text-[10px]">{isFullscreen ? 'Exit' : 'Full'}</span>
+          </button>
 
           {/* Primary Action Button (Start Battle / Reset / Replay) */}
           {gamePhase === 'PLACEMENT' ? (

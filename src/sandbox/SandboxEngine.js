@@ -208,9 +208,68 @@ export class SandboxEngine {
 
       // 7. Check Victory State
       if (victoryResult !== 'ONGOING' && gamePhase === 'BATTLE') {
+        soundSystem.stopWarDrums();
+
         if (this.possessionController) {
           this.possessionController.exitPossession();
         }
+
+        // Calculate Battle Accolades & MVP
+        const allUnits = this.units || [];
+        let mvpUnit = null;
+        let mvpScore = -1;
+        let vanguardUnit = null;
+        let vanguardScore = -1;
+        let sniperUnit = null;
+        let sniperScore = -1;
+
+        allUnits.forEach(u => {
+          const kills = u.kills || 0;
+          const dmg = u.damageDealt || 0;
+          const score = dmg + kills * 100;
+          if (score > mvpScore && (kills > 0 || dmg > 0)) {
+            mvpScore = score;
+            mvpUnit = {
+              name: u.typeConfig?.name || 'Warrior',
+              unitTypeId: u.typeConfig?.id || 'swordsman',
+              teamId: u.teamId,
+              kills,
+              damageDealt: Math.round(dmg),
+              traitId: u.traitId || 'none'
+            };
+          }
+
+          const absorbed = u.damageAbsorbed || 0;
+          if (absorbed > vanguardScore && absorbed > 0) {
+            vanguardScore = absorbed;
+            vanguardUnit = {
+              name: u.typeConfig?.name || 'Defender',
+              unitTypeId: u.typeConfig?.id || 'swordsman',
+              teamId: u.teamId,
+              damageAbsorbed: Math.round(absorbed),
+              traitId: u.traitId || 'none'
+            };
+          }
+
+          const isRanged = u.typeConfig && (u.typeConfig.category === 'ARCANE' || (u.typeConfig.attackRange || 0) > 8.0);
+          if (isRanged && (kills > 0 || dmg > 0) && score > sniperScore) {
+            sniperScore = score;
+            sniperUnit = {
+              name: u.typeConfig?.name || 'Ranger',
+              unitTypeId: u.typeConfig?.id || 'archer',
+              teamId: u.teamId,
+              kills,
+              damageDealt: Math.round(dmg)
+            };
+          }
+        });
+
+        useSandboxStore.getState().setBattleAwards({
+          mvp: mvpUnit,
+          vanguard: vanguardUnit,
+          sniper: sniperUnit
+        });
+
         if (victoryResult === 'VICTORY_BLUE') {
           setGamePhase('VICTORY_BLUE');
           soundSystem.playVictoryFanfare();
@@ -303,42 +362,53 @@ export class SandboxEngine {
     const traitCfg = UNIT_TRAITS[traitId] || UNIT_TRAITS.none;
     const totalCost = (typeCfg ? typeCfg.cost : 50) + traitCfg.cost;
 
-    if (store.gameMode === 'CAMPAIGN' && teamId === 'blue') {
-      if (store.remainingGold < totalCost) {
-        return;
-      }
-      store.deductGold(totalCost);
-    }
-
     const isRanged = typeCfg && (typeCfg.category === 'ARCANE' || typeCfg.attackRange > 8.0);
     const actualGarrison = isRanged && (isGarrisoned || position.isGarrison || false);
-    const groundY = this.terrainSystem ? this.terrainSystem.getHeight(position.x, position.z) : 0;
-    const actualY = actualGarrison ? position.y : groundY;
 
-    const unitPos = { x: position.x, y: actualY, z: position.z };
+    const offsetsZ = (minDistanceCheck && !actualGarrison)
+      ? (store.formationMode === 'WALL_5'
+          ? [-3.6, -1.8, 0, 1.8, 3.6]
+          : (store.formationMode === 'LINE_3' ? [-1.8, 0, 1.8] : [0]))
+      : [0];
 
-    const unit = new ActiveRagdollUnit(
-      this.threeScene.scene,
-      physicsWorld.world,
-      unitTypeId,
-      teamId,
-      unitPos,
-      this.vfxManager,
-      traitId,
-      this.bloodGoreSystem
-    );
+    for (const oz of offsetsZ) {
+      if (store.gameMode === 'CAMPAIGN' && teamId === 'blue') {
+        const curGold = useSandboxStore.getState().remainingGold;
+        if (curGold < totalCost) {
+          break;
+        }
+        store.deductGold(totalCost);
+      }
 
-    unit.unitCost = totalCost;
-    unit.isGarrisoned = actualGarrison;
+      const clampedZ = Math.max(-36, Math.min(36, position.z + oz));
+      const groundY = this.terrainSystem ? this.terrainSystem.getHeight(position.x, clampedZ) : 0;
+      const actualY = actualGarrison ? position.y : groundY;
 
-    this.units.push(unit);
-    this.initialPlacementConfig.push({
-      unitTypeId,
-      teamId,
-      position: { x: unitPos.x, y: unitPos.y, z: unitPos.z },
-      traitId,
-      isGarrisoned: actualGarrison
-    });
+      const unitPos = { x: position.x, y: actualY, z: clampedZ };
+
+      const unit = new ActiveRagdollUnit(
+        this.threeScene.scene,
+        physicsWorld.world,
+        unitTypeId,
+        teamId,
+        unitPos,
+        this.vfxManager,
+        traitId,
+        this.bloodGoreSystem
+      );
+
+      unit.unitCost = totalCost;
+      unit.isGarrisoned = actualGarrison;
+
+      this.units.push(unit);
+      this.initialPlacementConfig.push({
+        unitTypeId,
+        teamId,
+        position: { x: unitPos.x, y: unitPos.y, z: unitPos.z },
+        traitId,
+        isGarrisoned: actualGarrison
+      });
+    }
 
     this.lastPlacedPos = { x: position.x, z: position.z };
   }
@@ -429,10 +499,12 @@ export class SandboxEngine {
     if (this.objectiveSystem) {
       this.objectiveSystem.startRound();
     }
+    soundSystem.startWarDrums();
     useSandboxStore.getState().setGamePhase('BATTLE');
   }
 
   resetBattle() {
+    soundSystem.stopWarDrums();
     const store = useSandboxStore.getState();
     if (store.gameMode === 'CAMPAIGN') {
       this.loadCampaignLevel(store.currentLevelIndex);
@@ -467,6 +539,7 @@ export class SandboxEngine {
   }
 
   clearAll(clearSnapshot = true) {
+    soundSystem.stopWarDrums();
     this.units.forEach(u => u.destroy());
     this.units = [];
     if (this.projectileSystem) this.projectileSystem.clear();
