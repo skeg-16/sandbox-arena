@@ -23,8 +23,8 @@ export const useSandboxStore = create((set, get) => ({
   enforceDeploymentZones: true,
   objectiveHUD: null,
 
-  // Graphics Quality Preset & Performance Budget
-  graphicsQuality: 'HIGH', // LOW | MEDIUM | HIGH | ULTRA
+  // Graphics Quality Preset & Performance Budget (Auto-detect mobile for 60 FPS performance)
+  graphicsQuality: (typeof window !== 'undefined' && (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || (window.innerWidth < 768 && ('ontouchstart' in window || navigator.maxTouchPoints > 0)))) ? 'MEDIUM' : 'HIGH',
   fpsWarning: false,
 
   // Multi-Deploy Formation Stamp Mode

@@ -6,8 +6,47 @@ export class VFXManager {
     this.camera = camera;
     this.threeScene = threeScene;
     this.particles = [];
-    this.floatingTexts = [];
     this.combatMeshes = [];
+
+    // Pre-allocated object pool for floating damage numbers (Zero GC allocation during battle)
+    this.maxPooledTexts = 24;
+    this.textPool = [];
+    this.floatingTexts = [];
+    this._initTextPool();
+  }
+
+  _initTextPool() {
+    for (let i = 0; i < this.maxPooledTexts; i++) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const spriteMat = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false
+      });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.visible = false;
+      this.scene.add(sprite);
+
+      this.textPool.push({
+        canvas,
+        ctx,
+        texture,
+        material: spriteMat,
+        sprite,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        baseScale: 1.8,
+        life: 0,
+        maxLife: 0.85
+      });
+    }
   }
 
   spawnHitSparks(pos, colorHex = 0xfacc15, count = 8) {
@@ -125,10 +164,19 @@ export class VFXManager {
   }
 
   spawnFloatingDamageText(pos, damage, isCrit = false) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d');
+    // Acquire pooled sprite item instead of allocating new canvas and texture
+    let item = this.textPool.pop();
+    if (!item) {
+      // Pool exhausted: recycle oldest active floating text
+      if (this.floatingTexts.length > 0) {
+        item = this.floatingTexts.shift();
+      } else {
+        return;
+      }
+    }
+
+    const ctx = item.ctx;
+    ctx.clearRect(0, 0, 256, 128);
 
     let displayText = '';
     let textColor = '#facc15';
@@ -193,41 +241,27 @@ export class VFXManager {
     ctx.fillStyle = grad;
     ctx.fillText(displayText, 128, 64);
 
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const spriteMat = new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false
-    });
-    const sprite = new THREE.Sprite(spriteMat);
+    item.texture.needsUpdate = true;
 
     const baseScale = isCrit || isSpecial ? 2.5 : 1.8;
-    sprite.scale.set(baseScale, baseScale * 0.5, 1);
-    sprite.position.set(
+    item.sprite.scale.set(baseScale, baseScale * 0.5, 1);
+    item.sprite.position.set(
       pos.x + (Math.random() - 0.5) * 0.4,
       pos.y + 1.4,
       pos.z + (Math.random() - 0.5) * 0.4
     );
-
-    this.scene.add(sprite);
+    item.sprite.material.opacity = 1.0;
+    item.sprite.visible = true;
 
     // Subtle drift velocity
-    const vx = (Math.random() - 0.5) * 0.6;
-    const vy = isCrit ? 2.6 : 2.0;
-    const vz = (Math.random() - 0.5) * 0.6;
+    item.vx = (Math.random() - 0.5) * 0.6;
+    item.vy = isCrit ? 2.6 : 2.0;
+    item.vz = (Math.random() - 0.5) * 0.6;
+    item.baseScale = baseScale;
+    item.life = 0.85;
+    item.maxLife = 0.85;
 
-    this.floatingTexts.push({
-      sprite,
-      texture,
-      vx,
-      vy,
-      vz,
-      baseScale,
-      life: 0.85,
-      maxLife: 0.85
-    });
+    this.floatingTexts.push(item);
 
     // Screen Shake & Mobile Haptics for heavy hits / crits
     if (isCrit || (typeof damage === 'number' && damage > 50)) {
@@ -1298,11 +1332,32 @@ export class VFXManager {
       ft.sprite.material.opacity = Math.max(0, Math.min(1.0, progress * 1.8));
 
       if (ft.life <= 0) {
-        this.scene.remove(ft.sprite);
-        ft.sprite.material.dispose();
-        ft.texture.dispose();
+        ft.sprite.visible = false;
         this.floatingTexts.splice(i, 1);
+        this.textPool.push(ft);
       }
+    }
+
+    // Safety cap active particles & combat meshes to maintain high FPS during massive battles
+    if (this.particles.length > 120) {
+      const excess = this.particles.splice(0, this.particles.length - 120);
+      excess.forEach(p => {
+        this.scene.remove(p.mesh);
+        p.mesh.geometry?.dispose();
+        p.mesh.material?.dispose();
+      });
+    }
+
+    if (this.combatMeshes.length > 25) {
+      const excess = this.combatMeshes.splice(0, this.combatMeshes.length - 25);
+      excess.forEach(item => {
+        this.scene.remove(item.mesh);
+        if (item.mesh.geometry) item.mesh.geometry.dispose();
+        if (item.mesh.material) {
+          if (Array.isArray(item.mesh.material)) item.mesh.material.forEach(m => m.dispose());
+          else item.mesh.material.dispose();
+        }
+      });
     }
   }
 
@@ -1320,13 +1375,23 @@ export class VFXManager {
         else item.mesh.material.dispose();
       }
     });
+    // Return all active floating texts back to pool
     this.floatingTexts.forEach(ft => {
-      this.scene.remove(ft.sprite);
-      ft.sprite.material.dispose();
-      ft.texture.dispose();
+      ft.sprite.visible = false;
+      this.textPool.push(ft);
     });
     this.particles = [];
     this.combatMeshes = [];
     this.floatingTexts = [];
+  }
+
+  dispose() {
+    this.clear();
+    this.textPool.forEach(item => {
+      this.scene.remove(item.sprite);
+      item.material.dispose();
+      item.texture.dispose();
+    });
+    this.textPool = [];
   }
 }

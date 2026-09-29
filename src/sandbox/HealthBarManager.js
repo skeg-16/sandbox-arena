@@ -34,27 +34,33 @@ export class HealthBarManager {
       sprite.scale.set(1.6 * scale, 0.2 * scale, 1);
 
       this.scene.add(sprite);
-      item = { sprite, canvas, ctx, texture };
+      item = { sprite, canvas, ctx, texture, lastHealthPercent: -1 };
       this.bars.set(unit.id, item);
     }
 
-    // Draw HP Bar onto Canvas
     const { ctx, canvas, texture, sprite } = item;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Background Container
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    // Performance Optimization: Only redraw 2D canvas and upload to GPU when HP actually changes
+    const roundedPercent = Math.round(healthPercent * 100) / 100;
+    if (item.lastHealthPercent !== roundedPercent) {
+      item.lastHealthPercent = roundedPercent;
 
-    // Health Fill
-    const fillWidth = (canvas.width - 4) * healthPercent;
-    ctx.fillStyle = unit.teamId === 'blue' ? '#3b82f6' : '#ef4444';
-    ctx.fillRect(2, 2, fillWidth, canvas.height - 4);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    texture.needsUpdate = true;
+      // Background Container
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      // Health Fill
+      const fillWidth = (canvas.width - 4) * healthPercent;
+      ctx.fillStyle = unit.teamId === 'blue' ? '#3b82f6' : '#ef4444';
+      ctx.fillRect(2, 2, fillWidth, canvas.height - 4);
+
+      texture.needsUpdate = true;
+    }
 
     // Position sprite overhead above unit torso
     const pos = unit.body.translation();

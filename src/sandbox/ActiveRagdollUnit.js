@@ -2254,6 +2254,16 @@ export class ActiveRagdollUnit {
     }
 
     if (this.isDead) {
+      if (this.isSleeping) {
+        return;
+      }
+      this.deadTimer = (this.deadTimer || 0) + dt;
+      if (this.deadTimer > 2.8) {
+        if (this.body && typeof this.body.sleep === 'function') {
+          this.body.sleep();
+        }
+        this.isSleeping = true;
+      }
       this.updateMeshFromPhysics();
       return;
     }
@@ -3481,7 +3491,7 @@ export class ActiveRagdollUnit {
   }
 
   updateMeshFromPhysics() {
-    if (!this.body || !this.bodyGroup) return;
+    if (!this.body || !this.bodyGroup || this.isSleeping) return;
     const pos = this.body.translation();
     const rot = this.body.rotation();
 

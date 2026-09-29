@@ -1267,9 +1267,22 @@ export class StructureSystem {
 
     this.brazierLights = [];
     this.fireFlickerTimer = 0;
+    this.currentQualityLevel = 'HIGH';
 
     this.onGateBreachedCallback = null;
     this.onStructureCollapsedCallback = null;
+  }
+
+  setQuality(level) {
+    this.currentQualityLevel = level;
+    if (this.brazierLights) {
+      const maxActive = level === 'LOW' ? 0 : (level === 'MEDIUM' ? 3 : (level === 'HIGH' ? 6 : 16));
+      this.brazierLights.forEach((item, idx) => {
+        if (item && item.light) {
+          item.light.visible = idx < maxActive;
+        }
+      });
+    }
   }
 
   loadMapStructures(structureConfigs) {
@@ -1280,6 +1293,10 @@ export class StructureSystem {
       const struct = new FortificationStructure(this, cfg, this.world, this.scene, this.vfxManager);
       this.structures.push(struct);
     });
+
+    if (this.currentQualityLevel) {
+      this.setQuality(this.currentQualityLevel);
+    }
 
     console.log(`[StructureSystem] Loaded ${this.structures.length} fortifications.`);
   }
@@ -1468,12 +1485,12 @@ export class StructureSystem {
   update(dt) {
     const now = performance.now();
 
-    // Organic flame flicker for torch braziers
+    // Organic flame flicker for torch braziers (only compute for visible lights)
     if (this.brazierLights && this.brazierLights.length > 0) {
       this.fireFlickerTimer += dt * 6.5;
       for (let i = 0; i < this.brazierLights.length; i++) {
         const item = this.brazierLights[i];
-        if (item && item.light && item.light.parent) {
+        if (item && item.light && item.light.parent && item.light.visible) {
           const noise = Math.sin(this.fireFlickerTimer * 1.6 + item.phase) * 0.32 +
                         Math.cos(this.fireFlickerTimer * 2.8 + item.phase * 2) * 0.18;
           item.light.intensity = Math.max(0.7, item.baseIntensity + noise);

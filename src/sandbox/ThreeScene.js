@@ -1197,27 +1197,62 @@ export class ThreeSceneManager {
   setGraphicsQuality(level) {
     pbrMaterialSystem.setQuality(level);
 
-    if (this.sunLight && this.sunLight.shadow) {
+    if (this.renderer) {
       if (level === 'LOW') {
-        this.sunLight.shadow.mapSize.width = 1024;
-        this.sunLight.shadow.mapSize.height = 1024;
+        this.renderer.shadowMap.enabled = false;
+        this.renderer.setPixelRatio(1.0);
       } else if (level === 'MEDIUM') {
-        this.sunLight.shadow.mapSize.width = 1536;
-        this.sunLight.shadow.mapSize.height = 1536;
-      } else if (level === 'ULTRA') {
-        this.sunLight.shadow.mapSize.width = 4096;
-        this.sunLight.shadow.mapSize.height = 4096;
-      } else {
-        this.sunLight.shadow.mapSize.width = 2048;
-        this.sunLight.shadow.mapSize.height = 2048;
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2));
+      } else if (level === 'HIGH') {
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      } else { // ULTRA
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
       }
-      this.sunLight.shadow.map?.dispose();
-      this.sunLight.shadow.map = null;
     }
 
-    if (this.renderer) {
-      const pr = level === 'LOW' ? 1.0 : (level === 'ULTRA' ? Math.min(window.devicePixelRatio, 2.0) : Math.min(window.devicePixelRatio, 1.5));
-      this.renderer.setPixelRatio(pr);
+    if (this.sunLight) {
+      if (level === 'LOW') {
+        this.sunLight.castShadow = false;
+        if (this.sunLight.shadow && this.sunLight.shadow.map) {
+          this.sunLight.shadow.map.dispose();
+          this.sunLight.shadow.map = null;
+        }
+      } else {
+        this.sunLight.castShadow = true;
+        if (this.sunLight.shadow) {
+          if (level === 'MEDIUM') {
+            this.sunLight.shadow.mapSize.width = 1024;
+            this.sunLight.shadow.mapSize.height = 1024;
+          } else if (level === 'ULTRA') {
+            this.sunLight.shadow.mapSize.width = 2048;
+            this.sunLight.shadow.mapSize.height = 2048;
+          } else {
+            this.sunLight.shadow.mapSize.width = 1536;
+            this.sunLight.shadow.mapSize.height = 1536;
+          }
+          this.sunLight.shadow.map?.dispose();
+          this.sunLight.shadow.map = null;
+        }
+      }
+    }
+
+    // Dynamic light culling for forward rendering
+    if (this.brazierLights) {
+      const maxActive = level === 'LOW' ? 0 : (level === 'MEDIUM' ? 2 : (level === 'HIGH' ? 4 : 8));
+      this.brazierLights.forEach((light, idx) => {
+        if (light) light.visible = idx < maxActive;
+      });
+    }
+
+    // Atmospheric particle visibility
+    if (this.atmosphericParticles) {
+      this.atmosphericParticles.visible = level !== 'LOW';
     }
   }
 

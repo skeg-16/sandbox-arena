@@ -6,14 +6,45 @@
  */
 
 export class BattleAISystem {
-  constructor() {}
+  constructor() {
+    this.updateInterval = 0.12; // Update AI targets at ~8Hz instead of 60Hz
+    this.timer = 0;
+    this.blueUnits = [];
+    this.redUnits = [];
+  }
 
-  update(allUnits, objectiveSystem = null, structureSystem = null) {
-    const blueUnits = allUnits.filter(u => u.teamId === 'blue' && !u.isDead);
-    const redUnits = allUnits.filter(u => u.teamId === 'red' && !u.isDead);
+  update(allUnits, objectiveSystem = null, structureSystem = null, dt = 0.016) {
+    this.timer -= dt;
+    const shouldFullRefresh = this.timer <= 0;
+    if (shouldFullRefresh) {
+      this.timer = this.updateInterval;
+      this.blueUnits = [];
+      this.redUnits = [];
+      for (let i = 0; i < allUnits.length; i++) {
+        const u = allUnits[i];
+        if (!u.isDead) {
+          if (u.teamId === 'blue') this.blueUnits.push(u);
+          else this.redUnits.push(u);
+        }
+      }
+    }
 
-    allUnits.forEach(unit => {
-      if (unit.isDead || !unit.body || unit.isPossessed) return;
+    const blueUnits = this.blueUnits;
+    const redUnits = this.redUnits;
+
+    for (let i = 0; i < allUnits.length; i++) {
+      const unit = allUnits[i];
+      if (unit.isDead || !unit.body || unit.isPossessed) continue;
+
+      // Keep current target if still alive and valid, avoiding full search every frame
+      if (!shouldFullRefresh && unit.targetUnit && !unit.targetUnit.isDead && unit.targetUnit.body) {
+        continue;
+      }
+
+      // If not a full refresh, only update a fraction of units per frame to spread CPU cost
+      if (!shouldFullRefresh && unit.targetUnit) {
+        continue;
+      }
 
       const opposingTeam = unit.teamId === 'blue' ? redUnits : blueUnits;
       const pos = unit.body.translation();
@@ -25,16 +56,17 @@ export class BattleAISystem {
         if (struct) {
           unit.targetStructure = struct;
           unit.targetUnit = null;
-          return;
+          continue;
         }
       }
 
-      // 2. Find nearest living enemy unit
+      // 2. Find nearest living enemy unit (fast squared Euclidean check)
       let nearestEnemy = null;
       let minDistanceSq = Infinity;
 
-      opposingTeam.forEach(enemy => {
-        if (!enemy.body) return;
+      for (let j = 0; j < opposingTeam.length; j++) {
+        const enemy = opposingTeam[j];
+        if (!enemy.body) continue;
         const enemyPos = enemy.body.translation();
         const dx = enemyPos.x - pos.x;
         const dz = enemyPos.z - pos.z;
@@ -44,15 +76,16 @@ export class BattleAISystem {
           minDistanceSq = distSq;
           nearestEnemy = enemy;
         }
-      });
+      }
 
       // 3. In Capture Points mode, if no enemy is close (< 14m), path towards nearest contested/enemy point
-      if ((!nearestEnemy || minDistanceSq > 14 * 14) && objectiveSystem && objectiveSystem.scenarioType === 'CAPTURE_POINTS') {
+      if ((!nearestEnemy || minDistanceSq > 196) && objectiveSystem && objectiveSystem.scenarioType === 'CAPTURE_POINTS') {
         const points = objectiveSystem.capturePoints;
         let bestPoint = null;
         let bestDistSq = Infinity;
 
-        points.forEach(cp => {
+        for (let k = 0; k < points.length; k++) {
+          const cp = points[k];
           if (cp.owner !== unit.teamId) {
             const dx = cp.position.x - pos.x;
             const dz = cp.position.z - pos.z;
@@ -62,20 +95,19 @@ export class BattleAISystem {
               bestPoint = cp;
             }
           }
-        });
+        }
 
         if (bestPoint) {
-          unit.targetUnit = nearestEnemy; // Keep attacking if enemy is encountered on way
+          unit.targetUnit = nearestEnemy;
           unit.targetStructure = null;
-          // Destination hint for steering
           unit.objectiveDestination = bestPoint.position;
-          return;
+          continue;
         }
       }
 
       unit.targetUnit = nearestEnemy;
       unit.objectiveDestination = null;
-    });
+    }
 
     // Match Result is resolved by ObjectiveSystem if active, else standard elimination
     if (objectiveSystem) {

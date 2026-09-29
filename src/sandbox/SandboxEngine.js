@@ -44,6 +44,12 @@ export class SandboxEngine {
     this.lastTime = performance.now();
     this.isRunning = false;
     this.lastPlacedPos = null;
+
+    // UI state throttling to eliminate 60 FPS React re-render thrashing
+    this.uiCountTimer = 0;
+    this.lastBlueCount = -1;
+    this.lastRedCount = -1;
+    this.lastHudPush = 0;
   }
 
   async init(container) {
@@ -95,6 +101,10 @@ export class SandboxEngine {
     // Load Default Battleground Map
     const initialMapId = useSandboxStore.getState().activeMapId || 'castle_siege_plains';
     this.loadBattlegroundMap(initialMapId);
+
+    // Apply initial graphics quality preset (shadows, pixel ratio, light caps)
+    const initialQuality = useSandboxStore.getState().graphicsQuality || 'HIGH';
+    this.setGraphicsQuality(initialQuality);
 
     // 5. Start Render & Game Loop
     this.isRunning = true;
@@ -173,7 +183,7 @@ export class SandboxEngine {
       const victoryResult = this.objectiveSystem ? this.objectiveSystem.update(scaledDt, this.units, this.structureSystem) : 'ONGOING';
 
       // 2. Update AI targeting with objective & structure awareness
-      this.battleAI.update(this.units, this.objectiveSystem, this.structureSystem);
+      this.battleAI.update(this.units, this.objectiveSystem, this.structureSystem, scaledDt);
 
       // 3. Update Destructible Structure physics & debris
       if (this.structureSystem) {
@@ -201,8 +211,9 @@ export class SandboxEngine {
       if (this.decalSystem) this.decalSystem.update(scaledDt);
       if (this.terrainSystem) this.terrainSystem.update(scaledDt);
 
-      // 7. Push Live Objective HUD State to Zustand store
-      if (this.objectiveSystem) {
+      // 7. Push Live Objective HUD State to Zustand store (throttled to 5Hz to avoid 60 FPS React re-renders)
+      if (this.objectiveSystem && (timestamp - this.lastHudPush > 180)) {
+        this.lastHudPush = timestamp;
         setObjectiveHUD(this.objectiveSystem.getHUDState());
       }
 
@@ -293,10 +304,25 @@ export class SandboxEngine {
       this.units.forEach(unit => this.healthBarManager.updateUnitHealthBar(unit));
     }
 
-    // UPDATE LIVE UNIT COUNTS
-    const blueCount = this.units.filter(u => u.teamId === 'blue' && !u.isDead).length;
-    const redCount = this.units.filter(u => u.teamId === 'red' && !u.isDead).length;
-    updateCounts(blueCount, redCount, gamePhase === 'PLACEMENT');
+    // UPDATE LIVE UNIT COUNTS (Zero-allocation loop throttled to avoid React thrashing)
+    this.uiCountTimer += scaledDt;
+    if (this.uiCountTimer > 0.15 || gamePhase === 'PLACEMENT') {
+      this.uiCountTimer = 0;
+      let blueCount = 0;
+      let redCount = 0;
+      for (let i = 0; i < this.units.length; i++) {
+        const u = this.units[i];
+        if (!u.isDead) {
+          if (u.teamId === 'blue') blueCount++;
+          else redCount++;
+        }
+      }
+      if (blueCount !== this.lastBlueCount || redCount !== this.lastRedCount || gamePhase === 'PLACEMENT') {
+        this.lastBlueCount = blueCount;
+        this.lastRedCount = redCount;
+        updateCounts(blueCount, redCount, gamePhase === 'PLACEMENT');
+      }
+    }
 
     // RENDER THREE SCENE
     this.threeScene.render();
@@ -636,6 +662,9 @@ export class SandboxEngine {
   setGraphicsQuality(level) {
     if (this.threeScene) {
       this.threeScene.setGraphicsQuality(level);
+    }
+    if (this.structureSystem && typeof this.structureSystem.setQuality === 'function') {
+      this.structureSystem.setQuality(level);
     }
   }
 
