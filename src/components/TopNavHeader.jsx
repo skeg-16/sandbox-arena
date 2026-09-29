@@ -150,15 +150,15 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
 
   return (
     <header className="absolute top-0 inset-x-0 z-30 pointer-events-none select-none">
-      <div className="flex items-start justify-between p-3 gap-3">
+      <div className="flex items-start justify-between p-1.5 md:p-3 gap-1.5 md:gap-3">
 
         {/* ═══ LEFT: Sleek Game Emblem & Title ═══ */}
-        <div className="pointer-events-auto fantasy-panel px-3.5 py-2 flex items-center gap-2.5 shrink-0 animate-fade-in-down"
+        <div className="pointer-events-auto fantasy-panel px-2 md:px-3.5 py-1.5 md:py-2 flex items-center gap-1.5 md:gap-2.5 shrink-0 animate-fade-in-down"
           style={{ animationDelay: '100ms' }}>
-          <div className="p-2 rounded-lg bg-gradient-to-br from-crimson-500 via-crimson-700 to-obsidian-950 border border-crimson-400/40 shadow-crimson-glow">
-            <Swords className="w-4 h-4 text-parchment-50" />
+          <div className="p-1.5 md:p-2 rounded-lg bg-gradient-to-br from-crimson-500 via-crimson-700 to-obsidian-950 border border-crimson-400/40 shadow-crimson-glow">
+            <Swords className="w-3.5 h-3.5 md:w-4 md:h-4 text-parchment-50" />
           </div>
-          <div className="flex flex-col leading-none">
+          <div className="hidden sm:flex flex-col leading-none">
             <h1 className="font-cinzel font-black text-xs uppercase text-gold-gradient tracking-[0.14em]"
               style={{ textShadow: '0 0 16px rgba(201, 168, 76, 0.25)' }}>
               Battle Sandbox
@@ -170,7 +170,7 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
         </div>
 
         {/* ═══ CENTER: Cinematic Scoreboard with Team Crests ═══ */}
-        <div className="pointer-events-auto fantasy-panel-ornate px-4 py-2 flex items-center gap-3 shrink-0 animate-fade-in-down"
+        <div className="pointer-events-auto fantasy-panel-ornate px-2.5 md:px-4 py-1 md:py-2 flex items-center gap-2 md:gap-3 shrink-0 animate-fade-in-down"
           style={{ animationDelay: '200ms' }}>
 
           {/* Blue Team Crest & Score */}
@@ -254,13 +254,13 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
                   setActiveDropdown(activeDropdown === 'modes' ? null : 'modes');
                   soundSystem.playSwordSlash();
                 }}
-                className={`btn-fantasy-secondary px-3 py-1.5 text-[11px] flex items-center gap-1.5 transition-all ${
+                className={`btn-fantasy-secondary px-2 md:px-3 py-1 md:py-1.5 text-[11px] flex items-center gap-1 md:gap-1.5 transition-all ${
                   activeDropdown === 'modes' ? 'border-gold-400 bg-obsidian-800 text-gold-300' : ''
                 }`}
                 title="Scenarios, Campaign & Realms"
               >
                 <Layers className="w-3.5 h-3.5 text-gold-400" />
-                <span>Scenarios</span>
+                <span className="hidden sm:inline">Scenarios</span>
                 <ChevronDown className={`w-3 h-3 text-gold-500 transition-transform duration-200 ${activeDropdown === 'modes' ? 'rotate-180' : ''}`} />
               </button>
 
@@ -350,13 +350,13 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
                 setActiveDropdown(activeDropdown === 'settings' ? null : 'settings');
                 soundSystem.playSwordSlash();
               }}
-              className={`btn-fantasy-secondary px-3 py-1.5 text-[11px] flex items-center gap-1.5 transition-all ${
+              className={`btn-fantasy-secondary px-2 md:px-3 py-1 md:py-1.5 text-[11px] flex items-center gap-1 md:gap-1.5 transition-all ${
                 activeDropdown === 'settings' ? 'border-gold-400 bg-obsidian-800 text-gold-300' : ''
               }`}
               title="Camera, Speed, Audio & Gore Settings"
             >
               <Settings className="w-3.5 h-3.5 text-gold-400" />
-              <span>Settings</span>
+              <span className="hidden sm:inline">Settings</span>
               <ChevronDown className={`w-3 h-3 text-gold-500 transition-transform duration-200 ${activeDropdown === 'settings' ? 'rotate-180' : ''}`} />
             </button>
 
@@ -564,7 +564,7 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
                 setActiveDropdown(null);
               }}
               disabled={totalUnitsPlaced === 0 || blueCount === 0 || redCount === 0}
-              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-cinzel font-black text-xs uppercase tracking-widest transition-all ${
+              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-1.5 md:py-2 rounded-xl font-cinzel font-black text-[11px] md:text-xs uppercase tracking-wider md:tracking-widest transition-all ${
                 totalUnitsPlaced > 0 && blueCount > 0 && redCount > 0
                   ? 'btn-fantasy-battle'
                   : 'bg-obsidian-800 text-parchment-500/40 cursor-not-allowed border border-obsidian-700'

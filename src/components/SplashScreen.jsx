@@ -77,7 +77,7 @@ export const SplashScreen = ({ onEnter }) => {
       />
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center gap-8">
+      <div className="relative z-10 flex flex-col items-center gap-3 md:gap-7 px-4">
         {/* Sword Icon */}
         <div
           className={`transition-all duration-700 ${
@@ -90,18 +90,18 @@ export const SplashScreen = ({ onEnter }) => {
             transitionDelay: '200ms',
           }}
         >
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-crimson-400 via-crimson-600 to-obsidian-950 border-2 border-crimson-400/50 shadow-crimson-glow-lg">
-            <Swords className="w-12 h-12 text-parchment-50" />
+          <div className="p-3 md:p-5 rounded-2xl bg-gradient-to-br from-crimson-400 via-crimson-600 to-obsidian-950 border-2 border-crimson-400/50 shadow-crimson-glow-lg">
+            <Swords className="w-8 h-8 md:w-12 md:h-12 text-parchment-50" />
           </div>
         </div>
 
         {/* Game Title */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-1.5 md:gap-3">
           <h1
-            className={`font-cinzel font-black text-5xl md:text-6xl text-gold-gradient transition-all duration-1000 ${
+            className={`font-cinzel font-black text-3xl sm:text-4xl md:text-6xl text-gold-gradient transition-all duration-1000 text-center ${
               phase !== 'intro'
-                ? 'opacity-100 tracking-[0.15em]'
-                : 'opacity-0 tracking-[0.5em] blur-lg'
+                ? 'opacity-100 tracking-[0.12em] md:tracking-[0.15em]'
+                : 'opacity-0 tracking-[0.4em] blur-lg'
             }`}
             style={{
               textShadow: '0 0 40px rgba(201, 168, 76, 0.3), 0 4px 8px rgba(0, 0, 0, 0.5)',
@@ -116,7 +116,7 @@ export const SplashScreen = ({ onEnter }) => {
           {/* Ornate Divider Line */}
           <div
             className={`transition-all duration-700 ${
-              phase !== 'intro' ? 'opacity-100 w-64' : 'opacity-0 w-0'
+              phase !== 'intro' ? 'opacity-100 w-48 md:w-64' : 'opacity-0 w-0'
             }`}
             style={{ transitionDelay: '700ms' }}
           >
@@ -124,7 +124,7 @@ export const SplashScreen = ({ onEnter }) => {
           </div>
 
           <p
-            className={`font-crimsonText text-lg text-parchment-300/80 italic tracking-wide transition-all duration-700 ${
+            className={`font-crimsonText text-xs sm:text-sm md:text-lg text-parchment-300/80 italic tracking-wide text-center transition-all duration-700 ${
               phase !== 'intro' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{ transitionDelay: '900ms' }}
@@ -137,15 +137,15 @@ export const SplashScreen = ({ onEnter }) => {
         <button
           onClick={handleEnter}
           disabled={phase !== 'ready'}
-          className={`group relative mt-4 transition-all duration-700 ${
+          className={`group relative mt-1 md:mt-4 transition-all duration-700 ${
             phase === 'ready' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '1200ms' }}
         >
-          <div className="btn-fantasy-battle px-10 py-4 text-base flex items-center gap-3 group-hover:gap-4 transition-all">
-            <Swords className="w-5 h-5" />
+          <div className="btn-fantasy-battle px-6 md:px-10 py-2.5 md:py-4 text-xs sm:text-sm md:text-base flex items-center gap-2.5 md:gap-3 group-hover:gap-4 transition-all">
+            <Swords className="w-4 h-4 md:w-5 md:h-5" />
             <span>ENTER THE ARENA</span>
-            <Swords className="w-5 h-5 scale-x-[-1]" />
+            <Swords className="w-4 h-4 md:w-5 md:h-5 scale-x-[-1]" />
           </div>
 
           {/* Subtle glow ring on hover */}

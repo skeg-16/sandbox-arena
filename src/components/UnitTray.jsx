@@ -151,7 +151,7 @@ export const UnitTray = () => {
   });
 
   return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 w-[95%] max-w-5xl select-none transition-all duration-300">
+    <div className="absolute bottom-1.5 md:bottom-3 left-1/2 -translate-x-1/2 z-20 w-[98%] md:w-[95%] max-w-5xl select-none transition-all duration-300">
 
       {/* ═══ COLLAPSED MINIMAL DOCK TRIGGER ═══ */}
       {isCollapsed ? (
@@ -199,7 +199,7 @@ export const UnitTray = () => {
       ) : (
 
         /* ═══ EXPANDED COMPACT COMMANDER DOCK ═══ */
-        <div className="fantasy-panel-ornate p-2.5 flex flex-col gap-2 shadow-2xl animate-fade-in bg-obsidian-950/95">
+        <div className="fantasy-panel-ornate p-1.5 md:p-2.5 flex flex-col gap-1.5 md:gap-2 shadow-2xl animate-fade-in bg-obsidian-950/95">
 
           {/* ═══ Header Row: Team, Gold, Category Tabs, Trait Selector & Collapse ═══ */}
           <div className="flex items-center justify-between gap-2 px-1">
@@ -350,8 +350,8 @@ export const UnitTray = () => {
             </div>
           </div>
 
-          {/* ═══ Controls Guide Strip (Camera & Placement) ═══ */}
-          <div className="flex items-center justify-between px-2.5 py-1 bg-obsidian-900/60 rounded-lg border border-gold-800/15 text-[10px] font-mono text-parchment-400">
+          {/* ═══ Controls Guide Strip (Desktop Only) ═══ */}
+          <div className="hidden md:flex items-center justify-between px-2.5 py-1 bg-obsidian-900/60 rounded-lg border border-gold-800/15 text-[10px] font-mono text-parchment-400">
             <div className="flex items-center gap-2">
               <span className="text-gold-400 font-cinzel font-bold text-[9px] flex items-center gap-1">
                 <Move className="w-2.5 h-2.5" /> Camera:
@@ -417,13 +417,13 @@ export const UnitTray = () => {
                       setSelectedUnitType(unit.id);
                       soundSystem.playSwordSlash();
                     }}
-                    className={`group relative flex flex-col items-center justify-between p-2 rounded-xl transition-all duration-150 cursor-pointer border shrink-0 w-24 ${
+                    className={`group relative flex flex-col items-center justify-between p-1.5 md:p-2 rounded-xl transition-all duration-150 cursor-pointer border shrink-0 w-20 md:w-24 ${
                       isSelected
                         ? `${activeTeamBorder} scale-105 z-10`
                         : 'bg-obsidian-900/80 hover:bg-obsidian-800 border-gold-800/20 hover:border-gold-500/40'
                     }`}
                     style={{
-                      minHeight: '84px',
+                      minHeight: '66px',
                       borderColor: isSelected ? undefined : rarity.border
                     }}
                   >

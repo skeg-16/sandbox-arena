@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { sandboxEngine } from '../sandbox/SandboxEngine';
+import { useSandboxStore } from '../store/useSandboxStore';
 import { Zap, Crown, Ghost, Waves, Flame } from 'lucide-react';
 
 export const BossHealthBarOverlay = () => {
   const [bosses, setBosses] = useState([]);
+  const { isPossessing, possessedUnit } = useSandboxStore();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,20 +31,25 @@ export const BossHealthBarOverlay = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (bosses.length === 0) return null;
+  // When possessing a boss, don't render a duplicate boss bar for oneself (PossessionHUD already shows it)
+  const displayBosses = isPossessing && possessedUnit
+    ? bosses.filter(b => b.id !== possessedUnit.id)
+    : bosses;
+
+  if (displayBosses.length === 0) return null;
 
   const getDeityIcon = (typeId) => {
     switch (typeId) {
       case 'zeus':
-        return <Zap className="w-5 h-5 text-amber-300 animate-pulse" />;
+        return <Zap className="w-4 h-4 md:w-5 md:h-5 text-amber-300 animate-pulse" />;
       case 'ares':
-        return <Crown className="w-5 h-5 text-red-500 animate-bounce" />;
+        return <Crown className="w-4 h-4 md:w-5 md:h-5 text-red-500 animate-bounce" />;
       case 'hades':
-        return <Ghost className="w-5 h-5 text-emerald-400 animate-pulse" />;
+        return <Ghost className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 animate-pulse" />;
       case 'poseidon':
-        return <Waves className="w-5 h-5 text-cyan-400 animate-pulse" />;
+        return <Waves className="w-4 h-4 md:w-5 md:h-5 text-cyan-400 animate-pulse" />;
       default:
-        return <Flame className="w-5 h-5 text-amber-500" />;
+        return <Flame className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />;
     }
   };
 
@@ -75,55 +82,55 @@ export const BossHealthBarOverlay = () => {
   };
 
   return (
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-3 w-full max-w-2xl px-4 transition-all duration-300">
-      {bosses.map((boss) => {
+    <div className={`fixed ${isPossessing ? 'top-20 md:top-24' : 'top-14 md:top-16'} left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5 md:gap-2.5 w-[94%] max-w-xl px-2 md:px-4 transition-all duration-300`}>
+      {displayBosses.map((boss) => {
         const theme = getTeamColors(boss.teamId, boss.isEnraged);
         return (
           <div
             key={boss.id}
-            className={`w-full relative backdrop-blur-md rounded-lg p-2.5 px-4 border ${theme.border} ${theme.bg} transition-all duration-300`}
+            className={`w-full relative backdrop-blur-md rounded-lg p-1.5 md:p-2.5 px-3 md:px-4 border ${theme.border} ${theme.bg} transition-all duration-300`}
             style={{
               background: 'linear-gradient(180deg, rgba(12, 10, 18, 0.85) 0%, rgba(6, 5, 10, 0.95) 100%)',
               boxShadow: `0 8px 32px -4px rgba(0,0,0,0.8), 0 0 20px -2px ${theme.glow}`
             }}
           >
             {/* Header: Deity Icon, Name, Title, and Enrage Badge */}
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
-                <div className="p-1 rounded-md bg-black/40 border border-white/10 flex items-center justify-center">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <div className="p-0.5 md:p-1 rounded-md bg-black/40 border border-white/10 flex items-center justify-center">
                   {getDeityIcon(boss.typeId)}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-serif tracking-widest uppercase font-bold text-sm md:text-base text-amber-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <span className="font-serif tracking-widest uppercase font-bold text-xs md:text-sm text-amber-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                       {boss.name}
                     </span>
-                    <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${
+                    <span className={`text-[9px] uppercase font-mono px-1 py-0.2 rounded border ${
                       boss.teamId === 'blue' ? 'text-blue-300 border-blue-500/40 bg-blue-950/60' : 'text-red-300 border-red-500/40 bg-red-950/60'
                     }`}>
                       {boss.teamId}
                     </span>
                   </div>
-                  <div className="text-[11px] text-amber-400/80 font-sans tracking-wide">
+                  <div className="hidden sm:block text-[10px] text-amber-400/80 font-sans tracking-wide">
                     {boss.title}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 {boss.isEnraged && (
-                  <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full border animate-pulse ${theme.badge}`}>
-                    ⚡ ENRAGED ⚡
+                  <span className={`text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-full border animate-pulse ${theme.badge}`}>
+                    ⚡ ENRAGED
                   </span>
                 )}
-                <span className="font-mono text-xs text-amber-100 font-semibold drop-shadow">
+                <span className="font-mono text-[11px] md:text-xs text-amber-100 font-semibold drop-shadow">
                   {boss.health} / {boss.maxHealth}
                 </span>
               </div>
             </div>
 
             {/* Health Bar Track */}
-            <div className="relative h-3 w-full bg-black/70 rounded-full overflow-hidden border border-white/10 p-[1px]">
+            <div className="relative h-2 md:h-3 w-full bg-black/70 rounded-full overflow-hidden border border-white/10 p-[1px]">
               {/* Fill Bar */}
               <div
                 className={`h-full rounded-full transition-all duration-200 ease-out ${theme.fill}`}

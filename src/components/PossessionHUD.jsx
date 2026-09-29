@@ -75,18 +75,18 @@ export const PossessionHUD = () => {
       )}
 
       {/* Top Center Control Header */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 fantasy-panel px-6 py-3 min-w-[380px] animate-fade-in-down"
+      <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 z-40 fantasy-panel px-3.5 py-2 md:px-6 md:py-3 w-[92%] max-w-sm animate-fade-in-down"
         style={{ border: '2px solid rgba(201, 168, 76, 0.4)' }}>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5 md:gap-2">
           {/* Title Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Gamepad2 className="w-4 h-4 text-gold-400 animate-pulse" />
-              <div className="flex flex-col">
-                <span className="font-cinzel font-black text-xs uppercase text-gold-300 tracking-[0.12em]">
+              <Gamepad2 className="w-4 h-4 text-gold-400 animate-pulse shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="font-cinzel font-black text-xs uppercase text-gold-300 tracking-[0.12em] truncate">
                   Possessing {possessedUnit.typeConfig.name}
                 </span>
-                <span className="text-[10px] text-parchment-400 font-crimsonText italic">
+                <span className="text-[9px] md:text-[10px] text-parchment-400 font-crimsonText italic truncate">
                   Fight Style: {fightStyle}
                 </span>
               </div>
@@ -94,16 +94,16 @@ export const PossessionHUD = () => {
 
             <button
               onClick={handleExit}
-              className="btn-fantasy-danger px-2.5 py-1 text-[10px] flex items-center gap-1"
+              className="btn-fantasy-danger px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] flex items-center gap-1 shrink-0 ml-2"
             >
               <X className="w-3 h-3" /> Exit [E]
             </button>
           </div>
 
           {/* Live HP Bar */}
-          <div className="flex items-center gap-3">
-            <Heart className={`w-3.5 h-3.5 ${isLowHP ? 'text-crimson-400 animate-pulse' : 'text-crimson-400'}`} />
-            <div className="hp-bar-track flex-1" style={{ height: '10px' }}>
+          <div className="flex items-center gap-2.5">
+            <Heart className={`w-3 h-3 md:w-3.5 md:h-3.5 ${isLowHP ? 'text-crimson-400 animate-pulse' : 'text-crimson-400'} shrink-0`} />
+            <div className="hp-bar-track flex-1" style={{ height: '8px' }}>
               <div
                 className={possessedUnit.teamId === 'blue' ? 'hp-bar-fill-blue' : 'hp-bar-fill-red'}
                 style={{
@@ -112,15 +112,15 @@ export const PossessionHUD = () => {
                 }}
               />
             </div>
-            <span className="font-crimsonText text-xs font-bold text-parchment-200 shrink-0 w-14 text-right">
+            <span className="font-crimsonText text-xs font-bold text-parchment-200 shrink-0 w-12 text-right">
               {Math.round(possessedUnit.health)} HP
             </span>
           </div>
         </div>
       </div>
 
-      {/* Ultimate Ability Widget (Bottom Right) */}
-      <div className="absolute bottom-6 right-8 z-40 fantasy-panel px-5 py-3 flex items-center gap-4 animate-fade-in-up"
+      {/* Ultimate Ability Widget (Desktop Only - on mobile it is in the on-screen action dock) */}
+      <div className="hidden lg:flex absolute bottom-6 right-8 z-40 fantasy-panel px-5 py-3 items-center gap-4 animate-fade-in-up"
         style={{ border: isUltReady ? '2px solid rgba(250, 204, 21, 0.8)' : '1px solid rgba(201, 168, 76, 0.25)', boxShadow: isUltReady ? '0 0 20px rgba(250, 204, 21, 0.3)' : 'none' }}>
         <div className="relative w-12 h-12 flex items-center justify-center">
           {/* Circular progress background */}
