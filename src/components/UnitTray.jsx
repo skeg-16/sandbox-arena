@@ -29,7 +29,8 @@ import {
   Waves,
   Unlock,
   Lock,
-  Move
+  Move,
+  Trash2
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -106,7 +107,9 @@ export const UnitTray = () => {
     soundSystem.playSwordSlash();
   };
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return typeof window !== 'undefined' && window.innerWidth < 768;
+  });
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [isTraitMenuOpen, setIsTraitMenuOpen] = useState(false);
   const scrollRef = useRef(null);
@@ -153,32 +156,46 @@ export const UnitTray = () => {
   return (
     <div className="absolute bottom-1.5 md:bottom-3 left-1/2 -translate-x-1/2 z-20 w-[98%] md:w-[95%] max-w-5xl select-none transition-all duration-300">
 
-      {/* ═══ COLLAPSED MINIMAL DOCK TRIGGER ═══ */}
+      {/* ═══ COLLAPSED MINIMAL DOCK TRIGGER (Ultra-Clean Mobile Tactical Bar) ═══ */}
       {isCollapsed ? (
         <div className="flex justify-center animate-fade-in">
-          <div className="fantasy-panel px-4 py-2 flex items-center gap-3 shadow-2xl border border-gold-600/40 bg-obsidian-950/95">
+          <div className="fantasy-panel px-2.5 py-1.5 md:px-4 md:py-2 flex items-center gap-2 md:gap-3 shadow-2xl border border-gold-600/40 bg-obsidian-950/90 backdrop-blur-md rounded-2xl">
 
-            {/* Team Crest Indicator */}
-            <div className={`px-2 py-0.5 rounded text-[10px] font-cinzel font-bold border ${
-              activeTeam === 'blue'
-                ? 'bg-blue-900/60 text-blue-200 border-blue-500/50'
-                : 'bg-red-900/60 text-red-200 border-red-500/50'
-            }`}>
+            {/* Quick Team Toggle */}
+            <button
+              onClick={() => {
+                setActiveTeam(activeTeam === 'blue' ? 'red' : 'blue');
+                soundSystem.playSwordSlash();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-cinzel font-bold border transition-all active:scale-95 ${
+                activeTeam === 'blue'
+                  ? 'bg-blue-900/70 text-blue-200 border-blue-400/60 shadow-blue-glow'
+                  : 'bg-red-900/70 text-red-200 border-red-400/60 shadow-red-glow'
+              }`}
+              title="Tap to switch team"
+            >
               {activeTeam === 'blue' ? 'House Blue' : 'House Red'}
-            </div>
+            </button>
 
-            {/* Current Selected Unit */}
-            <div className="flex items-center gap-2 pr-2 border-r border-gold-800/30">
+            {/* Current Selected Unit - Tap to Open Drawer */}
+            <button
+              onClick={() => {
+                setIsCollapsed(false);
+                soundSystem.playSwordSlash();
+              }}
+              className="flex items-center gap-1.5 pr-2 border-r border-gold-800/30 hover:opacity-90 active:scale-95 transition-all"
+              title="Tap to change unit"
+            >
               <div className="p-1 rounded bg-obsidian-800 text-gold-400 border border-gold-800/30">
                 <SelectedIcon className="w-3.5 h-3.5" />
               </div>
-              <span className="font-cinzel text-xs font-bold text-parchment-100">
+              <span className="font-cinzel text-[11px] md:text-xs font-bold text-parchment-100">
                 {selectedUnit.name}
               </span>
-            </div>
+            </button>
 
-            {/* Current Trait Indicator */}
-            <div className="flex items-center gap-1.5 text-xs font-crimsonText text-parchment-300 pr-2 border-r border-gold-800/30">
+            {/* Current Trait Indicator (Hidden on small mobile) */}
+            <div className="hidden sm:flex items-center gap-1.5 text-xs font-crimsonText text-parchment-300 pr-2 border-r border-gold-800/30">
               <CurrentTraitIcon className="w-3.5 h-3.5" style={{ color: currentTrait.color }} />
               <span>{currentTrait.name}</span>
             </div>
@@ -189,10 +206,22 @@ export const UnitTray = () => {
                 setIsCollapsed(false);
                 soundSystem.playSwordSlash();
               }}
-              className="btn-fantasy-primary px-3 py-1 text-[10px] flex items-center gap-1.5 shadow-ember"
+              className="btn-fantasy-primary px-2.5 py-1 text-[10px] flex items-center gap-1 shadow-ember active:scale-95"
             >
               <ChevronUp className="w-3.5 h-3.5" />
-              <span>Expand Army (21 Units)</span>
+              <span>Units (26)</span>
+            </button>
+
+            {/* Quick Clear All */}
+            <button
+              onClick={() => {
+                sandboxEngine.clearAll(true);
+                soundSystem.playSwordSlash();
+              }}
+              className="p-1 rounded text-rose-400/80 hover:text-rose-300 active:scale-90 transition-transform"
+              title="Clear all units"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -416,6 +445,9 @@ export const UnitTray = () => {
                     onClick={() => {
                       setSelectedUnitType(unit.id);
                       soundSystem.playSwordSlash();
+                      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
                     }}
                     className={`group relative flex flex-col items-center justify-between p-1.5 md:p-2 rounded-xl transition-all duration-150 cursor-pointer border shrink-0 w-20 md:w-24 ${
                       isSelected

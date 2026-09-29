@@ -74,36 +74,21 @@ export const PossessionHUD = () => {
         </div>
       )}
 
-      {/* Top Center Control Header */}
-      <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 z-40 fantasy-panel px-3.5 py-2 md:px-6 md:py-3 w-[92%] max-w-sm animate-fade-in-down"
-        style={{ border: '2px solid rgba(201, 168, 76, 0.4)' }}>
-        <div className="flex flex-col gap-1.5 md:gap-2">
-          {/* Title Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Gamepad2 className="w-4 h-4 text-gold-400 animate-pulse shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="font-cinzel font-black text-xs uppercase text-gold-300 tracking-[0.12em] truncate">
-                  Possessing {possessedUnit.typeConfig.name}
-                </span>
-                <span className="text-[9px] md:text-[10px] text-parchment-400 font-crimsonText italic truncate">
-                  Fight Style: {fightStyle}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleExit}
-              className="btn-fantasy-danger px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] flex items-center gap-1 shrink-0 ml-2"
-            >
-              <X className="w-3 h-3" /> Exit [E]
-            </button>
+      {/* Top Center Control Header - Slim Mobile Pill / Desktop Panel */}
+      <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 z-40 fantasy-panel px-3 py-1.5 md:px-5 md:py-2.5 rounded-full md:rounded-2xl max-w-[95%] md:max-w-md animate-fade-in-down backdrop-blur-md bg-obsidian-950/80 border border-gold-600/40 shadow-xl">
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Deity Emblem & Name */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Gamepad2 className="w-3.5 h-3.5 text-gold-400 animate-pulse" />
+            <span className="font-cinzel font-black text-[11px] md:text-xs uppercase text-gold-300 tracking-wider">
+              {possessedUnit.typeConfig.name}
+            </span>
           </div>
 
-          {/* Live HP Bar */}
-          <div className="flex items-center gap-2.5">
-            <Heart className={`w-3 h-3 md:w-3.5 md:h-3.5 ${isLowHP ? 'text-crimson-400 animate-pulse' : 'text-crimson-400'} shrink-0`} />
-            <div className="hp-bar-track flex-1" style={{ height: '8px' }}>
+          {/* Slim Live HP Bar */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-[70px] md:min-w-[120px]">
+            <Heart className={`w-3 h-3 ${isLowHP ? 'text-crimson-400 animate-pulse' : 'text-crimson-400'} shrink-0`} />
+            <div className="hp-bar-track flex-1" style={{ height: '6px' }}>
               <div
                 className={possessedUnit.teamId === 'blue' ? 'hp-bar-fill-blue' : 'hp-bar-fill-red'}
                 style={{
@@ -112,20 +97,26 @@ export const PossessionHUD = () => {
                 }}
               />
             </div>
-            <span className="font-crimsonText text-xs font-bold text-parchment-200 shrink-0 w-12 text-right">
-              {Math.round(possessedUnit.health)} HP
+            <span className="font-crimsonText text-[10px] md:text-xs font-bold text-parchment-200 shrink-0">
+              {Math.round(possessedUnit.health)}
             </span>
           </div>
+
+          {/* Exit Button */}
+          <button
+            onClick={handleExit}
+            className="btn-fantasy-danger px-2 py-0.5 text-[9px] md:text-[10px] flex items-center gap-1 shrink-0 rounded-full"
+          >
+            <X className="w-2.5 h-2.5" /> Exit
+          </button>
         </div>
       </div>
 
-      {/* Ultimate Ability Widget (Desktop Only - on mobile it is in the on-screen action dock) */}
+      {/* Ultimate Ability Widget (Desktop Only) */}
       <div className="hidden lg:flex absolute bottom-6 right-8 z-40 fantasy-panel px-5 py-3 items-center gap-4 animate-fade-in-up"
         style={{ border: isUltReady ? '2px solid rgba(250, 204, 21, 0.8)' : '1px solid rgba(201, 168, 76, 0.25)', boxShadow: isUltReady ? '0 0 20px rgba(250, 204, 21, 0.3)' : 'none' }}>
         <div className="relative w-12 h-12 flex items-center justify-center">
-          {/* Circular progress background */}
           <div className="absolute inset-0 rounded-full border-2 border-obsidian-700 bg-obsidian-900" />
-          {/* Ready Pulse Ring */}
           {isUltReady ? (
             <div className="absolute inset-0 rounded-full border-2 border-yellow-400 animate-ping opacity-75" />
           ) : (
@@ -177,25 +168,25 @@ export const PossessionHUD = () => {
         ))}
       </div>
 
-      {/* ═══ MOBILE ON-SCREEN COMBAT CONTROLS ═══ */}
-      {/* Left: Virtual D-Pad / Movement */}
-      <div className="flex lg:hidden absolute bottom-6 left-4 z-40 flex-col items-center gap-1 select-none pointer-events-auto">
+      {/* ═══ MOBILE ULTRA-COMPACT COMBAT CONTROLS ═══ */}
+      {/* Left: Compact Translucent Virtual D-Pad (only ~75px wide) */}
+      <div className="flex lg:hidden absolute bottom-3 left-3 z-40 flex-col items-center gap-0.5 select-none pointer-events-auto opacity-75 hover:opacity-100 active:opacity-100 transition-opacity">
         <button
           onTouchStart={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.w = true; }}
           onTouchEnd={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.w = false; }}
           onMouseDown={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.w = true; }}
           onMouseUp={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.w = false; }}
-          className="w-12 h-12 rounded-xl bg-obsidian-900/90 border border-gold-600/50 flex items-center justify-center text-gold-300 active:scale-95 active:bg-gold-600/30 shadow-lg text-sm font-black"
+          className="w-9 h-9 rounded-lg bg-obsidian-950/60 backdrop-blur-sm border border-gold-500/30 flex items-center justify-center text-gold-300 active:bg-gold-500/30 active:scale-90 shadow-md text-xs font-bold"
         >
           ▲
         </button>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onTouchStart={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.a = true; }}
             onTouchEnd={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.a = false; }}
             onMouseDown={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.a = true; }}
             onMouseUp={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.a = false; }}
-            className="w-12 h-12 rounded-xl bg-obsidian-900/90 border border-gold-600/50 flex items-center justify-center text-gold-300 active:scale-95 active:bg-gold-600/30 shadow-lg text-sm font-black"
+            className="w-9 h-9 rounded-lg bg-obsidian-950/60 backdrop-blur-sm border border-gold-500/30 flex items-center justify-center text-gold-300 active:bg-gold-500/30 active:scale-90 shadow-md text-xs font-bold"
           >
             ◀
           </button>
@@ -204,7 +195,7 @@ export const PossessionHUD = () => {
             onTouchEnd={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.s = false; }}
             onMouseDown={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.s = true; }}
             onMouseUp={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.s = false; }}
-            className="w-12 h-12 rounded-xl bg-obsidian-900/90 border border-gold-600/50 flex items-center justify-center text-gold-300 active:scale-95 active:bg-gold-600/30 shadow-lg text-sm font-black"
+            className="w-9 h-9 rounded-lg bg-obsidian-950/60 backdrop-blur-sm border border-gold-500/30 flex items-center justify-center text-gold-300 active:bg-gold-500/30 active:scale-90 shadow-md text-xs font-bold"
           >
             ▼
           </button>
@@ -213,20 +204,20 @@ export const PossessionHUD = () => {
             onTouchEnd={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.d = false; }}
             onMouseDown={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.d = true; }}
             onMouseUp={() => { if (sandboxEngine.possessionController) sandboxEngine.possessionController.keys.d = false; }}
-            className="w-12 h-12 rounded-xl bg-obsidian-900/90 border border-gold-600/50 flex items-center justify-center text-gold-300 active:scale-95 active:bg-gold-600/30 shadow-lg text-sm font-black"
+            className="w-9 h-9 rounded-lg bg-obsidian-950/60 backdrop-blur-sm border border-gold-500/30 flex items-center justify-center text-gold-300 active:bg-gold-500/30 active:scale-90 shadow-md text-xs font-bold"
           >
             ▶
           </button>
         </div>
       </div>
 
-      {/* Right: Combat Action Buttons (Attack, Ultimate, Jump) */}
-      <div className="flex lg:hidden absolute bottom-6 right-4 z-40 items-end gap-3 select-none pointer-events-auto">
-        <div className="flex flex-col gap-2">
+      {/* Right: Compact Translucent Action Buttons (only ~95px wide) */}
+      <div className="flex lg:hidden absolute bottom-3 right-3 z-40 items-end gap-2 select-none pointer-events-auto opacity-80 hover:opacity-100 active:opacity-100 transition-opacity">
+        <div className="flex flex-col gap-1.5 items-center">
           {/* Jump Button */}
           <button
             onClick={() => sandboxEngine.possessionController?.jump()}
-            className="w-11 h-11 rounded-xl bg-blue-950/90 border border-blue-500/60 flex items-center justify-center text-blue-300 font-cinzel font-bold text-xs shadow-lg active:scale-95"
+            className="w-9 h-9 rounded-xl bg-blue-950/60 backdrop-blur-sm border border-blue-400/40 flex items-center justify-center text-blue-200 font-cinzel font-bold text-[9px] shadow-md active:scale-90"
             title="Jump"
           >
             JUMP
@@ -235,24 +226,24 @@ export const PossessionHUD = () => {
           <button
             onClick={() => sandboxEngine.possessionController?.ultimate()}
             disabled={!isUltReady}
-            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-cinzel font-bold text-[10px] shadow-2xl transition-all active:scale-95 border ${
+            className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center font-cinzel font-bold text-[9px] shadow-lg transition-all active:scale-90 border backdrop-blur-sm ${
               isUltReady
-                ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 text-obsidian-950 border-amber-300 animate-pulse'
-                : 'bg-obsidian-900/90 border-gold-800/30 text-parchment-500 opacity-60'
+                ? 'bg-amber-600/70 border-amber-300 text-yellow-100 animate-pulse shadow-amber-500/30'
+                : 'bg-obsidian-950/50 border-gold-800/30 text-parchment-500/60'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5" />
             <span>ULT</span>
           </button>
         </div>
 
-        {/* Big Combo Attack Button */}
+        {/* Ergonomic Attack Button */}
         <button
           onClick={() => sandboxEngine.possessionController?.attack()}
-          className="w-20 h-20 rounded-full bg-gradient-to-br from-crimson-500 via-crimson-600 to-red-800 border-2 border-gold-400 text-parchment-50 flex flex-col items-center justify-center shadow-crimson-glow-lg active:scale-90 transition-transform"
+          className="w-14 h-14 rounded-full bg-gradient-to-br from-crimson-600/80 via-crimson-700/80 to-obsidian-950/80 backdrop-blur-sm border-2 border-gold-400/80 text-parchment-50 flex flex-col items-center justify-center shadow-crimson-glow active:scale-90 transition-transform"
         >
-          <Swords className="w-7 h-7" />
-          <span className="font-cinzel font-black text-[10px] uppercase tracking-wider mt-0.5">ATTACK</span>
+          <Swords className="w-5 h-5 text-gold-200" />
+          <span className="font-cinzel font-black text-[9px] uppercase tracking-wider mt-0.5 text-gold-100">ATK</span>
         </button>
       </div>
 

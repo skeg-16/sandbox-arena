@@ -153,7 +153,7 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
       <div className="flex items-start justify-between p-1.5 md:p-3 gap-1.5 md:gap-3">
 
         {/* ═══ LEFT: Sleek Game Emblem & Title ═══ */}
-        <div className="pointer-events-auto fantasy-panel px-2 md:px-3.5 py-1.5 md:py-2 flex items-center gap-1.5 md:gap-2.5 shrink-0 animate-fade-in-down"
+        <div className="hidden md:flex pointer-events-auto fantasy-panel px-2 md:px-3.5 py-1.5 md:py-2 items-center gap-1.5 md:gap-2.5 shrink-0 animate-fade-in-down"
           style={{ animationDelay: '100ms' }}>
           <div className="p-1.5 md:p-2 rounded-lg bg-gradient-to-br from-crimson-500 via-crimson-700 to-obsidian-950 border border-crimson-400/40 shadow-crimson-glow">
             <Swords className="w-3.5 h-3.5 md:w-4 md:h-4 text-parchment-50" />
