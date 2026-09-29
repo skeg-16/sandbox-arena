@@ -5,9 +5,11 @@ import { Zap, Crown, Ghost, Waves, Flame } from 'lucide-react';
 
 export const BossHealthBarOverlay = () => {
   const [bosses, setBosses] = useState([]);
-  const { isPossessing, possessedUnit } = useSandboxStore();
+  const { isPossessing, possessedUnit, gamePhase } = useSandboxStore();
 
   useEffect(() => {
+    if (gamePhase !== 'BATTLE') return;
+
     const interval = setInterval(() => {
       if (!sandboxEngine || !sandboxEngine.units) return;
 
@@ -26,10 +28,13 @@ export const BossHealthBarOverlay = () => {
         }));
 
       setBosses(activeBosses);
-    }, 100);
+    }, 120);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [gamePhase]);
+
+  // ONLY show epic boss battle health bars during active BATTLE, not during army placement!
+  if (gamePhase !== 'BATTLE') return null;
 
   // When possessing a boss, don't render a duplicate boss bar for oneself (PossessionHUD already shows it)
   const displayBosses = isPossessing && possessedUnit

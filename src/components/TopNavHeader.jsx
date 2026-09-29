@@ -580,10 +580,10 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
             )}
           </div>
 
-          {/* Native Fullscreen Button */}
+          {/* Native Fullscreen Button (Desktop only) */}
           <button
             onClick={handleToggleFullscreen}
-            className="btn-fantasy-secondary px-2 md:px-2.5 py-1 md:py-1.5 text-[11px] flex items-center gap-1 transition-all"
+            className="btn-fantasy-secondary px-2 md:px-2.5 py-1 md:py-1.5 text-[11px] hidden md:flex items-center gap-1 transition-all"
             title={isFullscreen ? "Exit Fullscreen (Esc)" : "Enter Fullscreen (Maximize Battlefield)"}
           >
             {isFullscreen ? (
@@ -594,7 +594,7 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
             <span className="hidden lg:inline text-[10px]">{isFullscreen ? 'Exit' : 'Full'}</span>
           </button>
 
-          {/* Primary Action Button (Start Battle / Reset / Replay) */}
+          {/* Primary Action Button in Top Bar (Desktop/Tablet, on mobile it is in the bottom dock) */}
           {gamePhase === 'PLACEMENT' ? (
             <button
               onClick={() => {
@@ -603,7 +603,7 @@ export const TopNavHeader = ({ onOpenPresets, onOpenEnvPicker, onOpenCampaign, o
                 setActiveDropdown(null);
               }}
               disabled={totalUnitsPlaced === 0 || blueCount === 0 || redCount === 0}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-1.5 md:py-2 rounded-xl font-cinzel font-black text-[11px] md:text-xs uppercase tracking-wider md:tracking-widest transition-all ${
+              className={`hidden sm:flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-1.5 md:py-2 rounded-xl font-cinzel font-black text-[11px] md:text-xs uppercase tracking-wider md:tracking-widest transition-all ${
                 totalUnitsPlaced > 0 && blueCount > 0 && redCount > 0
                   ? 'btn-fantasy-battle'
                   : 'bg-obsidian-800 text-parchment-500/40 cursor-not-allowed border border-obsidian-700'
