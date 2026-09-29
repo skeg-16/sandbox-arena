@@ -64,6 +64,8 @@ export class TerrainSystem {
     const colCliffRock = new THREE.Color(0x475569); // Sheer granite cliff
     const colPeakRock = new THREE.Color(0x334155);  // High dark bedrock
     const colTrenchDirt = new THREE.Color(0x573926); // War-trampled ground
+    const colCobblestone = new THREE.Color(0x64748b); // Fortress stone road / pavers
+    const colFlagstone = new THREE.Color(0x78716c);   // Warm castle courtyard stone
 
     // 1. Elevate each vertex using map heightmap function
     for (let i = 0; i < pos.count; i++) {
@@ -87,9 +89,9 @@ export class TerrainSystem {
       const slopeAngle = Math.acos(Math.max(-1, Math.min(1, ny))); // radians
 
       // Base: Flat ground vs steep cliff
-      if (slopeAngle > 0.58) { // > 33 degrees -> Granite rock cliff
+      if (slopeAngle > 0.55) { // > 31 degrees -> Granite rock cliff
         tempColor.copy(colCliffRock);
-        if (y > 6.0) tempColor.lerp(colPeakRock, 0.4);
+        if (y > 4.5) tempColor.lerp(colPeakRock, 0.45);
       } else if (this.currentMap.waterPlane && this.currentMap.waterPlane.enabled && y < this.currentMap.waterPlane.level + 0.4) {
         // Near water shore / riverbed
         tempColor.copy(colMud).lerp(colSand, 0.35);
@@ -97,6 +99,19 @@ export class TerrainSystem {
         // Rolling plains / hillside
         const t = Math.max(0, Math.min(1, y / 8.0));
         tempColor.copy(colGrassLow).lerp(colGrassMid, t);
+
+        // Castle Siege Plains: Paved road and fortress courtyard flagstones
+        if (this.currentMap.id === 'castle_siege_plains') {
+          // Approach road to the castle
+          if (x >= -4 && x <= 16 && Math.abs(z) < 3.8 && slopeAngle < 0.45) {
+            const roadDist = Math.abs(z) / 3.8;
+            tempColor.lerp(colCobblestone, (1 - roadDist) * 0.75);
+          }
+          // Castle courtyard & citadel flagstones
+          if (x > 14 && x <= 46 && Math.abs(z) < 24 && slopeAngle < 0.45) {
+            tempColor.lerp(colFlagstone, 0.72);
+          }
+        }
 
         // Central clash front dirt discoloration (where armies meet around x=0)
         if (Math.abs(x) < 7.0 && slopeAngle < 0.35) {
@@ -272,13 +287,19 @@ export class TerrainSystem {
       // On Mountain Pass, strictly constrain grass to canyon floor (|z| <= 7.5), never on mountain cliffs
       if (this.currentMap.id === 'mountain_pass' && Math.abs(gz) > 7.5) continue;
 
+      // Keep paved castle grounds and approach road clean of wild grass
+      if (this.currentMap.id === 'castle_siege_plains') {
+        if (gx > 13 && Math.abs(gz) < 25) continue;
+        if (gx >= -4 && gx <= 13 && Math.abs(gz) < 3.8) continue;
+      }
+
       // Skip trampled clash front
       if (Math.abs(gx) < 5.0 && Math.random() < 0.75) continue;
 
       const gy = this.getHeight(gx, gz);
       // Skip submerged in water or rocky peaks
       if (this.hasWater && gy < this.waterLevel + 0.35) continue;
-      if (gy > 3.0) continue; // No grass on high cliffs/ridges
+      if (gy > 3.4) continue; // No grass on high cliffs/ridges
 
       const norm = this.getNormal(gx, gz);
       if (norm.y < 0.88) continue; // Skip steep hills and slopes (> 28 deg)

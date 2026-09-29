@@ -36,22 +36,47 @@ export class WaypointNavSystem {
         const isCliff = normal.y < 0.65; // Slope > ~48 degrees is impassable
         const isDeepWater = this.terrainSystem.hasWater && (this.terrainSystem.waterLevel - y > 1.2);
 
-        let isBlocked = isCliff || isDeepWater;
+        // Check if there is a walkable structure bridging this area (staircase, terrace, bridge)
+        let isWalkablePlatform = false;
+        if (structureSystem && structureSystem.structures) {
+          for (const s of structureSystem.structures) {
+            if (s.isDestroyed) continue;
+            if (s.typeConfig.isWalkable || s.typeConfig.id === 'bridge' || s.typeConfig.id === 'staircase_stone' || s.typeConfig.id === 'rampart_stairs' || s.typeConfig.id === 'courtyard_terrace') {
+              const dx = Math.abs(x - s.position.x);
+              const dz = Math.abs(z - s.position.z);
+              const maxSpan = Math.max(s.typeConfig.width, s.typeConfig.depth || 4.0) * 0.6;
+              if (dx < maxSpan && dz < maxSpan) {
+                isWalkablePlatform = true;
+                break;
+              }
+            }
+          }
+        }
+
+        let isBlocked = (!isWalkablePlatform && isCliff) || isDeepWater;
 
         // Check if blocked by an intact structure
         if (!isBlocked && structureSystem) {
           for (const s of structureSystem.structures) {
             if (s.isDestroyed) continue;
+
+            // Walkable structures and stairs never block pathfinding
+            if (s.typeConfig.isWalkable || s.typeConfig.id === 'bridge' || s.typeConfig.id === 'staircase_stone' || s.typeConfig.id === 'rampart_stairs' || s.typeConfig.id === 'courtyard_terrace') {
+              continue;
+            }
+
+            // Small props don't block large navigation nodes
+            if (s.typeConfig.isProp || s.typeConfig.id === 'brazier_fire' || s.typeConfig.id === 'weapon_rack' || s.typeConfig.id === 'siege_supply_cache') {
+              continue;
+            }
+
             const dx = Math.abs(x - s.position.x);
             const dz = Math.abs(z - s.position.z);
             const halfW = s.typeConfig.width * 0.55;
             const halfD = (s.typeConfig.depth || 3.0) * 0.55;
 
-            // Bridges are walkable!
-            if (s.typeConfig.id === 'bridge') continue;
-
             // Gatehouse: if gate breached, central lane is open
-            if (s.typeConfig.id === 'gatehouse' && s.isGateBreached && dx < 2.2) {
+            if (s.typeConfig.id === 'gatehouse' && s.isGateBreached && dx < 2.4) {
               continue;
             }
 

@@ -49,43 +49,99 @@ export const BATTLEGROUND_MAPS = {
       blue: { minX: -50, maxX: -10, minZ: -36, maxZ: 36, label: 'Attacker Staging Grounds' },
       red: { minX: 10, maxX: 48, minZ: -36, maxZ: 36, label: 'Defender Citadel Grounds' }
     },
-    // Analytical 3D heightmap function
+    // Multi-tiered analytical 3D heightmap function
     getHeight: (x, z) => {
-      // Gentle rolling plains across western field
-      let h = Math.sin(x * 0.08) * 0.9 + Math.cos(z * 0.07) * 0.8;
-      // High elevated plateau for fortress on east side (x > 8)
-      if (x > 8) {
-        const rampFactor = Math.min(1.0, (x - 8) / 10);
-        h += rampFactor * 3.4;
+      const absZ = Math.abs(z);
+      // Gentle natural undulating ground across plains
+      let h = Math.sin(x * 0.07) * 0.6 + Math.cos(z * 0.06) * 0.5;
+
+      // Layer 1: Outer Wall Terrace & Gateway Approach Ramp (x from 0 to 16)
+      if (x > 0 && x <= 16) {
+        const rampT = Math.min(1.0, x / 14);
+        h += rampT * 2.2;
+      } else if (x > 16 && x <= 26) {
+        // Layer 2: Inner Courtyard & Bailey Plateau (y ≈ 2.6 - 2.8)
+        const t = (x - 16) / 10;
+        h += 2.2 + t * 0.6;
+      } else if (x > 26) {
+        // Layer 3: High Citadel Bluff & Keep Mount (y ≈ 5.4 - 5.8)
+        const citadelT = Math.min(1.0, (x - 26) / 7.0);
+        const smoothCitadel = citadelT * citadelT * (3 - 2 * citadelT);
+        h += 2.8 + smoothCitadel * 2.6;
       }
-      // Edge rim berms to prevent sliding out
+
+      // Natural mountain ridge slopes enclosing the north and south bounds
+      if (absZ > 26) {
+        const cliffDist = absZ - 26;
+        h += cliffDist * 0.35 + Math.min(12.0, cliffDist * cliffDist * 0.05);
+        h += Math.sin(x * 0.25 + z * 0.35) * 0.4;
+      }
+
+      // Edge perimeter berms
       const distFromCenter = Math.sqrt(x * x + z * z);
-      if (distFromCenter > 46) {
-        h += (distFromCenter - 46) * 0.35;
+      if (distFromCenter > 48) {
+        h += (distFromCenter - 48) * 0.4;
       }
+
       return h;
     },
     // Pre-laid fortress layout
     defaultCamera: {
-      target: { x: 4, y: 1.8, z: 0 },
-      spherical: { radius: 50, phi: Math.PI / 3.4, theta: -Math.PI * 0.28 }
+      target: { x: 10, y: 3.0, z: 0 },
+      spherical: { radius: 52, phi: Math.PI / 3.4, theta: -Math.PI * 0.28 }
     },
     defaultStructures: [
-      // Central Keep
-      { id: 'keep_main', type: 'keep', teamId: 'red', position: { x: 34, y: 3.4, z: 0 }, rotationY: 0 },
-      // Flanking Watchtowers
-      { id: 'tower_north', type: 'watchtower', teamId: 'red', position: { x: 14, y: 2.2, z: -15 }, rotationY: 0 },
-      { id: 'tower_south', type: 'watchtower', teamId: 'red', position: { x: 14, y: 2.2, z: 15 }, rotationY: 0 },
-      // Gatehouse blocking central path
-      { id: 'gatehouse_main', type: 'gatehouse', teamId: 'red', position: { x: 14, y: 2.2, z: 0 }, rotationY: 0 },
-      // Castle Wall segments connecting towers to gatehouse
-      { id: 'wall_north', type: 'wall_segment', teamId: 'red', position: { x: 14, y: 2.2, z: -7.5 }, rotationY: 0 },
-      { id: 'wall_south', type: 'wall_segment', teamId: 'red', position: { x: 14, y: 2.2, z: 7.5 }, rotationY: 0 },
-      { id: 'wall_flank_n', type: 'wall_segment', teamId: 'red', position: { x: 14, y: 2.2, z: -22.5 }, rotationY: 0 },
-      { id: 'wall_flank_s', type: 'wall_segment', teamId: 'red', position: { x: 14, y: 2.2, z: 22.5 }, rotationY: 0 },
-      // Outer wooden palisades / barricades
-      { id: 'palisade_1', type: 'palisade', teamId: 'red', position: { x: 0, y: 0.4, z: -12 }, rotationY: 0.15 },
-      { id: 'palisade_2', type: 'palisade', teamId: 'red', position: { x: 0, y: 0.4, z: 12 }, rotationY: -0.15 }
+      // 1. High Citadel Stronghold Keep
+      { id: 'keep_main', type: 'keep', teamId: 'red', position: { x: 38, y: 5.6, z: 0 }, rotationY: 0 },
+
+      // 2. Grand Stone Staircase connecting Courtyard Terrace to High Keep Mount
+      { id: 'grand_staircase', type: 'staircase_stone', teamId: 'red', position: { x: 29.5, y: 2.8, z: 0 }, rotationY: Math.PI / 2 },
+
+      // 3. Citadel Courtyard Terrace Platform
+      { id: 'citadel_terrace', type: 'courtyard_terrace', teamId: 'red', position: { x: 25.0, y: 2.7, z: 0 }, rotationY: 0 },
+
+      // 4. Central Fortified Gatehouse
+      { id: 'gatehouse_main', type: 'gatehouse', teamId: 'red', position: { x: 14.0, y: 2.4, z: 0 }, rotationY: 0 },
+
+      // 5. Main Curtain Wall Segments
+      { id: 'wall_north', type: 'wall_segment', teamId: 'red', position: { x: 14.0, y: 2.4, z: -7.5 }, rotationY: 0 },
+      { id: 'wall_south', type: 'wall_segment', teamId: 'red', position: { x: 14.0, y: 2.4, z: 7.5 }, rotationY: 0 },
+      { id: 'wall_flank_n', type: 'wall_segment', teamId: 'red', position: { x: 14.0, y: 2.4, z: -22.5 }, rotationY: 0 },
+      { id: 'wall_flank_s', type: 'wall_segment', teamId: 'red', position: { x: 14.0, y: 2.4, z: 22.5 }, rotationY: 0 },
+
+      // 6. Flanking Watchtowers with Mounted Ballistas
+      { id: 'tower_north', type: 'watchtower', teamId: 'red', position: { x: 14.0, y: 2.4, z: -15.0 }, rotationY: 0 },
+      { id: 'tower_south', type: 'watchtower', teamId: 'red', position: { x: 14.0, y: 2.4, z: 15.0 }, rotationY: 0 },
+      { id: 'ballista_north', type: 'siege_ballista', teamId: 'red', position: { x: 14.0, y: 11.0, z: -15.0 }, rotationY: -Math.PI / 2 },
+      { id: 'ballista_south', type: 'siege_ballista', teamId: 'red', position: { x: 14.0, y: 11.0, z: 15.0 }, rotationY: -Math.PI / 2 },
+
+      // 7. Rampart Access Stairs (Defenders can march up to the wall walkways!)
+      { id: 'stairs_rampart_n', type: 'rampart_stairs', teamId: 'red', position: { x: 17.5, y: 2.5, z: -8.0 }, rotationY: Math.PI / 2 },
+      { id: 'stairs_rampart_s', type: 'rampart_stairs', teamId: 'red', position: { x: 17.5, y: 2.5, z: 8.0 }, rotationY: Math.PI / 2 },
+
+      // 8. Dynamic Medieval Fire Braziers (Gates, Stairs & Citadel illumination)
+      { id: 'brazier_gate_n', type: 'brazier_fire', teamId: 'red', position: { x: 10.8, y: 2.3, z: -3.8 }, rotationY: 0 },
+      { id: 'brazier_gate_s', type: 'brazier_fire', teamId: 'red', position: { x: 10.8, y: 2.3, z: 3.8 }, rotationY: 0 },
+      { id: 'brazier_stairs_n', type: 'brazier_fire', teamId: 'red', position: { x: 25.5, y: 2.8, z: -3.8 }, rotationY: 0 },
+      { id: 'brazier_stairs_s', type: 'brazier_fire', teamId: 'red', position: { x: 25.5, y: 2.8, z: 3.8 }, rotationY: 0 },
+      { id: 'brazier_citadel_n', type: 'brazier_fire', teamId: 'red', position: { x: 33.5, y: 5.5, z: -3.2 }, rotationY: 0 },
+      { id: 'brazier_citadel_s', type: 'brazier_fire', teamId: 'red', position: { x: 33.5, y: 5.5, z: 3.2 }, rotationY: 0 },
+
+      // 9. Armory Weapon Racks (Halberds, spears & shields)
+      { id: 'rack_north', type: 'weapon_rack', teamId: 'red', position: { x: 19.5, y: 2.6, z: -11.5 }, rotationY: 0 },
+      { id: 'rack_south', type: 'weapon_rack', teamId: 'red', position: { x: 19.5, y: 2.6, z: 11.5 }, rotationY: 0 },
+      { id: 'rack_citadel', type: 'weapon_rack', teamId: 'red', position: { x: 34.0, y: 5.5, z: 6.2 }, rotationY: -Math.PI / 4 },
+
+      // 10. Siege Supply Caches (Crates, oak barrels & sacks)
+      { id: 'supplies_1', type: 'siege_supply_cache', teamId: 'red', position: { x: 21.0, y: 2.7, z: -5.5 }, rotationY: 0.25 },
+      { id: 'supplies_2', type: 'siege_supply_cache', teamId: 'red', position: { x: 21.0, y: 2.7, z: 5.5 }, rotationY: -0.2 },
+      { id: 'supplies_citadel', type: 'siege_supply_cache', teamId: 'red', position: { x: 35.0, y: 5.5, z: -6.5 }, rotationY: 0.4 },
+
+      // 11. Defensive Spike Barricades (Cheval-de-Frise) guarding chokepoints
+      { id: 'spikes_approach_n', type: 'spike_barricade', teamId: 'red', position: { x: 2.0, y: 0.6, z: -10.0 }, rotationY: 0.1 },
+      { id: 'spikes_approach_s', type: 'spike_barricade', teamId: 'red', position: { x: 2.0, y: 0.6, z: 10.0 }, rotationY: -0.1 },
+      { id: 'spikes_flank_n', type: 'spike_barricade', teamId: 'red', position: { x: 10.0, y: 2.2, z: -27.0 }, rotationY: 0.3 },
+      { id: 'spikes_flank_s', type: 'spike_barricade', teamId: 'red', position: { x: 10.0, y: 2.2, z: 27.0 }, rotationY: -0.3 }
     ],
     capturePoints: [],
     treeSpawns: [
@@ -138,11 +194,20 @@ export const BATTLEGROUND_MAPS = {
       // Flanking Watchtowers perched right next to the cliffs
       { id: 'pass_tower_n', type: 'watchtower', teamId: 'red', position: { x: 0, y: 0.6, z: -8 }, rotationY: 0 },
       { id: 'pass_tower_s', type: 'watchtower', teamId: 'red', position: { x: 0, y: 0.6, z: 8 }, rotationY: 0 },
+      // Wall segment connecting gate to cliff towers
+      { id: 'pass_wall_n', type: 'wall_segment', teamId: 'red', position: { x: 0, y: 0.4, z: -4.5 }, rotationY: 0 },
+      { id: 'pass_wall_s', type: 'wall_segment', teamId: 'red', position: { x: 0, y: 0.4, z: 4.5 }, rotationY: 0 },
       // Inner Red Keep at the rear of the pass
       { id: 'pass_keep', type: 'keep', teamId: 'red', position: { x: 30, y: 0.3, z: 0 }, rotationY: 0 },
-      // Outer Barricades
-      { id: 'pass_palisade_1', type: 'palisade', teamId: 'red', position: { x: -14, y: 0.1, z: -3 }, rotationY: 0 },
-      { id: 'pass_palisade_2', type: 'palisade', teamId: 'red', position: { x: -14, y: 0.1, z: 3 }, rotationY: 0 }
+      // Canyon Pass Fire Braziers
+      { id: 'pass_brazier_n', type: 'brazier_fire', teamId: 'red', position: { x: -3.5, y: 0.2, z: -3.2 }, rotationY: 0 },
+      { id: 'pass_brazier_s', type: 'brazier_fire', teamId: 'red', position: { x: -3.5, y: 0.2, z: 3.2 }, rotationY: 0 },
+      // Outer Spike Barricades in Canyon Gorge
+      { id: 'pass_spikes_1', type: 'spike_barricade', teamId: 'red', position: { x: -16, y: 0.1, z: -3.0 }, rotationY: 0.08 },
+      { id: 'pass_spikes_2', type: 'spike_barricade', teamId: 'red', position: { x: -16, y: 0.1, z: 3.0 }, rotationY: -0.08 },
+      // Armory & Supplies behind the gate
+      { id: 'pass_rack_1', type: 'weapon_rack', teamId: 'red', position: { x: 8, y: 0.2, z: -4.5 }, rotationY: 0 },
+      { id: 'pass_supplies_1', type: 'siege_supply_cache', teamId: 'red', position: { x: 8, y: 0.2, z: 4.5 }, rotationY: 0.2 }
     ],
     capturePoints: [],
     treeSpawns: [
