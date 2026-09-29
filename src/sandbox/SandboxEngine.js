@@ -3,7 +3,7 @@ import { ThreeSceneManager } from './ThreeScene';
 import { ActiveRagdollUnit } from './ActiveRagdollUnit';
 import { BattleAISystem } from './BattleAI';
 import { ProjectileSystem } from './ProjectileSystem';
-import { PlacementManager } from './PlacementManager';
+import { PlacementManager, getFormationOffsets } from './PlacementManager';
 import { VFXManager } from './VFXManager';
 import { HealthBarManager } from './HealthBarManager';
 import { BloodGoreSystem } from './BloodGoreSystem';
@@ -342,6 +342,44 @@ export class SandboxEngine {
     );
   }
 
+  placeSingleUnit(unitTypeId, teamId, position, overrideTrait = null, isGarrisoned = false) {
+    const store = useSandboxStore.getState();
+    const traitId = overrideTrait || store.selectedTrait || 'none';
+    const typeCfg = UNIT_TYPES[unitTypeId];
+    const traitCfg = UNIT_TRAITS[traitId] || UNIT_TRAITS.none;
+    const totalCost = (typeCfg ? typeCfg.cost : 50) + traitCfg.cost;
+
+    const isRanged = typeCfg && (typeCfg.category === 'ARCANE' || typeCfg.attackRange > 8.0);
+    const actualGarrison = isRanged && (isGarrisoned || position.isGarrison || false);
+    const groundY = this.terrainSystem ? this.terrainSystem.getHeight(position.x, position.z) : 0;
+    const actualY = actualGarrison ? position.y : groundY;
+
+    const unitPos = { x: position.x, y: actualY, z: position.z };
+
+    const unit = new ActiveRagdollUnit(
+      this.threeScene.scene,
+      physicsWorld.world,
+      unitTypeId,
+      teamId,
+      unitPos,
+      this.vfxManager,
+      traitId,
+      this.bloodGoreSystem
+    );
+
+    unit.unitCost = totalCost;
+    unit.isGarrisoned = actualGarrison;
+
+    this.units.push(unit);
+    this.initialPlacementConfig.push({
+      unitTypeId,
+      teamId,
+      position: { x: unitPos.x, y: unitPos.y, z: unitPos.z },
+      traitId,
+      isGarrisoned: actualGarrison
+    });
+  }
+
   placeUnit(unitTypeId, teamId, position, minDistanceCheck = true, overrideTrait = null, isGarrisoned = false) {
     const store = useSandboxStore.getState();
     if (store.gamePhase !== 'PLACEMENT') return;
@@ -365,13 +403,14 @@ export class SandboxEngine {
     const isRanged = typeCfg && (typeCfg.category === 'ARCANE' || typeCfg.attackRange > 8.0);
     const actualGarrison = isRanged && (isGarrisoned || position.isGarrison || false);
 
-    const offsetsZ = (minDistanceCheck && !actualGarrison)
-      ? (store.formationMode === 'WALL_5'
-          ? [-3.6, -1.8, 0, 1.8, 3.6]
-          : (store.formationMode === 'LINE_3' ? [-1.8, 0, 1.8] : [0]))
-      : [0];
+    // Multi-Deploy Formation Offsets: 1, 3, 5, 10, 20, 50
+    const offsets = (!actualGarrison && !position.isGarrison)
+      ? getFormationOffsets(store.formationMode, teamId)
+      : [{ dx: 0, dz: 0 }];
 
-    for (const oz of offsetsZ) {
+    const mapConfig = BATTLEGROUND_MAPS[store.activeMapId] || BATTLEGROUND_MAPS.castle_siege_plains;
+
+    for (const offset of offsets) {
       if (store.gameMode === 'CAMPAIGN' && teamId === 'blue') {
         const curGold = useSandboxStore.getState().remainingGold;
         if (curGold < totalCost) {
@@ -380,11 +419,27 @@ export class SandboxEngine {
         store.deductGold(totalCost);
       }
 
-      const clampedZ = Math.max(-36, Math.min(36, position.z + oz));
-      const groundY = this.terrainSystem ? this.terrainSystem.getHeight(position.x, clampedZ) : 0;
+      const clampedX = Math.max(-48, Math.min(48, position.x + offset.dx));
+      const clampedZ = Math.max(-36, Math.min(36, position.z + offset.dz));
+
+      // Check deployment zones if enforced
+      if (store.enforceDeploymentZones && position.isValidSide !== undefined) {
+        if (mapConfig && mapConfig.deploymentZones) {
+          const zone = mapConfig.deploymentZones[teamId];
+          if (zone) {
+            const inZone = clampedX >= zone.minX && clampedX <= zone.maxX && clampedZ >= zone.minZ && clampedZ <= zone.maxZ;
+            if (!inZone) continue;
+          }
+        } else {
+          const inHalf = (teamId === 'blue' && clampedX <= 0) || (teamId === 'red' && clampedX >= 0);
+          if (!inHalf) continue;
+        }
+      }
+
+      const groundY = this.terrainSystem ? this.terrainSystem.getHeight(clampedX, clampedZ) : 0;
       const actualY = actualGarrison ? position.y : groundY;
 
-      const unitPos = { x: position.x, y: actualY, z: clampedZ };
+      const unitPos = { x: clampedX, y: actualY, z: clampedZ };
 
       const unit = new ActiveRagdollUnit(
         this.threeScene.scene,
@@ -411,6 +466,15 @@ export class SandboxEngine {
     }
 
     this.lastPlacedPos = { x: position.x, z: position.z };
+
+    // Update real-time counts immediately
+    let blueCount = 0;
+    let redCount = 0;
+    this.units.forEach(u => {
+      if (u.teamId === 'blue') blueCount++;
+      else redCount++;
+    });
+    store.updateCounts(blueCount, redCount, true);
   }
 
   resetDragState() {
@@ -423,9 +487,16 @@ export class SandboxEngine {
     this.clearAll(true);
     const presetUnits = scenario.generate();
     presetUnits.forEach(u => {
-      this.placeUnit(u.unitTypeId, u.teamId, u.position, false, u.traitId || 'none');
+      this.placeSingleUnit(u.unitTypeId, u.teamId, u.position, u.traitId || 'none');
     });
     this.resetDragState();
+    let blueCount = 0;
+    let redCount = 0;
+    this.units.forEach(u => {
+      if (u.teamId === 'blue') blueCount++;
+      else redCount++;
+    });
+    store.updateCounts(blueCount, redCount, true);
   }
 
   loadCampaignLevel(levelIdx) {
@@ -527,8 +598,16 @@ export class SandboxEngine {
     }
 
     savedConfig.forEach(cfg => {
-      this.placeUnit(cfg.unitTypeId, cfg.teamId, cfg.position, false, cfg.traitId || 'none', cfg.isGarrisoned);
+      this.placeSingleUnit(cfg.unitTypeId, cfg.teamId, cfg.position, cfg.traitId || 'none', cfg.isGarrisoned);
     });
+
+    let blueCount = 0;
+    let redCount = 0;
+    this.units.forEach(u => {
+      if (u.teamId === 'blue') blueCount++;
+      else redCount++;
+    });
+    store.updateCounts(blueCount, redCount, true);
 
     useSandboxStore.getState().setGamePhase('PLACEMENT');
   }

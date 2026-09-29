@@ -490,32 +490,48 @@ export const UnitTray = () => {
                 <div className="flex items-center justify-between text-[10px] text-parchment-400 font-cinzel">
                   <span>Formation Stamp:</span>
                   <span className="text-gold-300 font-bold font-mono">
-                    {formationMode === 'WALL_5' ? 'Phalanx Wall (x5)' : (formationMode === 'LINE_3' ? 'Line Rank (x3)' : 'Single (x1)')}
+                    {formationMode === '50' || formationMode === 'LEGION_50' ? 'Legion Swarm (50x)' :
+                     formationMode === '20' || formationMode === 'BATTALION_20' ? 'Battalion (20x)' :
+                     formationMode === '10' || formationMode === 'PLATOON_10' ? 'Platoon (10x)' :
+                     formationMode === '5' || formationMode === 'WALL_5' ? 'Phalanx Wall (5x)' :
+                     formationMode === '3' || formationMode === 'LINE_3' ? 'Line Rank (3x)' : 'Single (1x)'}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-1 bg-obsidian-900/90 p-1 rounded-xl border border-gold-800/40">
                   {[
-                    { id: 'SINGLE', label: '1x Single', desc: '1 Unit' },
-                    { id: 'LINE_3', label: '3x Line', desc: '3 Units' },
-                    { id: 'WALL_5', label: '5x Wall', desc: '5 Units' }
-                  ].map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        setFormationMode(f.id);
-                        sandboxEngine.placementManager?.setFormation();
-                        soundSystem.playSwordSlash();
-                      }}
-                      className={`py-1.5 px-1 rounded-lg text-center transition-all ${
-                        formationMode === f.id
-                          ? 'bg-gold-500 text-obsidian-950 font-bold shadow-ember'
-                          : 'text-parchment-400 hover:text-parchment-200 hover:bg-obsidian-800'
-                      }`}
-                    >
-                      <div className="text-[10px] font-cinzel font-bold leading-tight">{f.label}</div>
-                      <div className="text-[8px] font-mono opacity-80 leading-tight">{f.desc}</div>
-                    </button>
-                  ))}
+                    { id: '1', label: '1x Single', desc: '1 Unit' },
+                    { id: '3', label: '3x Line', desc: '3 Units' },
+                    { id: '5', label: '5x Wall', desc: '5 Units' },
+                    { id: '10', label: '10x Platoon', desc: '10 Units' },
+                    { id: '20', label: '20x Cohort', desc: '20 Units' },
+                    { id: '50', label: '50x Legion', desc: '50 Units' }
+                  ].map((f) => {
+                    const isActive = formationMode === f.id ||
+                      (f.id === '1' && (formationMode === 'SINGLE' || !formationMode)) ||
+                      (f.id === '3' && formationMode === 'LINE_3') ||
+                      (f.id === '5' && formationMode === 'WALL_5') ||
+                      (f.id === '10' && formationMode === 'PLATOON_10') ||
+                      (f.id === '20' && formationMode === 'BATTALION_20') ||
+                      (f.id === '50' && formationMode === 'LEGION_50');
+                    return (
+                      <button
+                        key={f.id}
+                        onClick={() => {
+                          setFormationMode(f.id);
+                          sandboxEngine.placementManager?.setFormation();
+                          soundSystem.playSwordSlash();
+                        }}
+                        className={`py-1.5 px-1 rounded-lg text-center transition-all ${
+                          isActive
+                            ? 'bg-gold-500 text-obsidian-950 font-bold shadow-ember'
+                            : 'text-parchment-400 hover:text-parchment-200 hover:bg-obsidian-800'
+                        }`}
+                      >
+                        <div className="text-[10px] font-cinzel font-bold leading-tight">{f.label}</div>
+                        <div className="text-[8px] font-mono opacity-80 leading-tight">{f.desc}</div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -578,30 +594,42 @@ export const UnitTray = () => {
             </div>
           </button>
 
-          {/* Quick Formation Stamp Switcher */}
+          {/* Quick Formation Stamp Switcher: 1x, 3x, 5x, 10x, 20x, 50x */}
           <div className="flex items-center gap-0.5 bg-obsidian-900/90 p-0.5 rounded-full border border-gold-800/40 font-mono text-[9px]">
             {[
-              { id: 'SINGLE', label: 'x1', title: 'Single Unit' },
-              { id: 'LINE_3', label: 'x3', title: 'Line Formation (3 Units)' },
-              { id: 'WALL_5', label: 'x5', title: 'Phalanx Wall (5 Units)' }
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => {
-                  setFormationMode(f.id);
-                  sandboxEngine.placementManager?.setFormation();
-                  soundSystem.playSwordSlash();
-                }}
-                className={`px-1.5 py-0.5 rounded-full font-bold transition-all ${
-                  formationMode === f.id
-                    ? 'bg-gold-500 text-obsidian-950 shadow-ember font-black'
-                    : 'text-parchment-400 hover:text-parchment-200'
-                }`}
-                title={f.title}
-              >
-                {f.label}
-              </button>
-            ))}
+              { id: '1', label: '1x', title: 'Single Unit' },
+              { id: '3', label: '3x', title: 'Line Formation (3 Units)' },
+              { id: '5', label: '5x', title: 'Phalanx Wall (5 Units)' },
+              { id: '10', label: '10x', title: 'Platoon (10 Units - 2 ranks)' },
+              { id: '20', label: '20x', title: 'Battalion (20 Units - 4 ranks)' },
+              { id: '50', label: '50x', title: 'Legion Swarm (50 Units - 5 ranks)' }
+            ].map((f) => {
+              const isActive = formationMode === f.id ||
+                (f.id === '1' && (formationMode === 'SINGLE' || !formationMode)) ||
+                (f.id === '3' && formationMode === 'LINE_3') ||
+                (f.id === '5' && formationMode === 'WALL_5') ||
+                (f.id === '10' && formationMode === 'PLATOON_10') ||
+                (f.id === '20' && formationMode === 'BATTALION_20') ||
+                (f.id === '50' && formationMode === 'LEGION_50');
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => {
+                    setFormationMode(f.id);
+                    sandboxEngine.placementManager?.setFormation();
+                    soundSystem.playSwordSlash();
+                  }}
+                  className={`px-1.5 py-0.5 rounded-full font-bold transition-all ${
+                    isActive
+                      ? 'bg-gold-500 text-obsidian-950 shadow-ember font-black'
+                      : 'text-parchment-400 hover:text-parchment-200'
+                  }`}
+                  title={f.title}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Quick Change Unit Button */}
