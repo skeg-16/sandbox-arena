@@ -1,0 +1,381 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    user-select: none;
+    -webkit-user-select: none;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-obsidian-950 text-parchment-100 font-sans overflow-hidden min-h-screen flex items-center justify-center;
+    font-feature-settings: 'liga' 1, 'kern' 1;
+  }
+
+  /* Custom scrollbar for fantasy theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(12, 10, 16, 0.8);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(201, 168, 76, 0.35);
+    border-radius: 4px;
+    border: 1px solid rgba(201, 168, 76, 0.15);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(201, 168, 76, 0.55);
+  }
+}
+
+@layer components {
+  /* ═══════════════════════════════════════════════════════════════
+     ORNATE PANEL SYSTEM — Dark Fantasy Glassmorphism
+     ═══════════════════════════════════════════════════════════════ */
+  .fantasy-panel {
+    @apply bg-obsidian-900/90 backdrop-blur-xl;
+    border: 2px solid rgba(201, 168, 76, 0.25);
+    border-radius: 16px;
+    box-shadow:
+      0 0 20px rgba(0, 0, 0, 0.7),
+      0 0 40px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(201, 168, 76, 0.12);
+    position: relative;
+  }
+
+  .fantasy-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(201, 168, 76, 0.06) 0%, transparent 30%, transparent 70%, rgba(201, 168, 76, 0.03) 100%);
+    pointer-events: none;
+  }
+
+  /* Ornate corner decorations for major panels */
+  .fantasy-panel-ornate {
+    @apply fantasy-panel;
+    border: 2px solid rgba(201, 168, 76, 0.35);
+  }
+
+  .fantasy-panel-ornate::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(201, 168, 76, 0.2) 0%, transparent 25%),
+      radial-gradient(circle at 100% 0%, rgba(201, 168, 76, 0.2) 0%, transparent 25%),
+      radial-gradient(circle at 0% 100%, rgba(201, 168, 76, 0.2) 0%, transparent 25%),
+      radial-gradient(circle at 100% 100%, rgba(201, 168, 76, 0.2) 0%, transparent 25%);
+    pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BUTTON SYSTEM — Medieval Fantasy Buttons
+     ═══════════════════════════════════════════════════════════════ */
+  .btn-fantasy {
+    @apply font-cinzel font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl;
+    @apply transition-all duration-200 ease-out;
+    @apply active:scale-95;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-fantasy::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .btn-fantasy-primary {
+    @apply btn-fantasy;
+    background: linear-gradient(180deg, #c9a84c 0%, #a88930 100%);
+    color: #110e17;
+    border: 1px solid rgba(245, 208, 110, 0.6);
+    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    text-shadow: 0 1px 1px rgba(201, 168, 76, 0.3);
+  }
+
+  .btn-fantasy-primary:hover {
+    background: linear-gradient(180deg, #f5d06e 0%, #c9a84c 100%);
+    box-shadow: 0 6px 24px rgba(201, 168, 76, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-fantasy-secondary {
+    @apply btn-fantasy;
+    background: rgba(34, 29, 46, 0.9);
+    color: #f0e8d4;
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .btn-fantasy-secondary:hover {
+    background: rgba(46, 40, 64, 0.95);
+    border-color: rgba(201, 168, 76, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 12px rgba(201, 168, 76, 0.15);
+  }
+
+  .btn-fantasy-danger {
+    @apply btn-fantasy;
+    background: rgba(139, 26, 26, 0.5);
+    color: #f2919f;
+    border: 1px solid rgba(196, 30, 58, 0.4);
+    box-shadow: 0 2px 8px rgba(139, 26, 26, 0.3);
+  }
+
+  .btn-fantasy-danger:hover {
+    background: rgba(162, 24, 48, 0.6);
+    border-color: rgba(196, 30, 58, 0.6);
+    box-shadow: 0 4px 16px rgba(196, 30, 58, 0.4);
+  }
+
+  .btn-fantasy-battle {
+    @apply btn-fantasy font-black text-sm tracking-widest;
+    background: linear-gradient(135deg, #c41e3a 0%, #8b1a1a 50%, #c41e3a 100%);
+    color: #fef9e7;
+    border: 2px solid rgba(196, 30, 58, 0.6);
+    box-shadow: 0 0 20px rgba(196, 30, 58, 0.4), 0 4px 16px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    animation: glowPulse 2.5s ease-in-out infinite;
+  }
+
+  .btn-fantasy-battle:hover {
+    background: linear-gradient(135deg, #e85a6d 0%, #c41e3a 50%, #e85a6d 100%);
+    box-shadow: 0 0 30px rgba(196, 30, 58, 0.6), 0 6px 24px rgba(0, 0, 0, 0.6);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DIVIDER / SEPARATOR DECORATIONS
+     ═══════════════════════════════════════════════════════════════ */
+  .ornate-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(201, 168, 76, 0.4) 20%, rgba(201, 168, 76, 0.6) 50%, rgba(201, 168, 76, 0.4) 80%, transparent 100%);
+    position: relative;
+  }
+
+  .ornate-divider::before {
+    content: '◆';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    color: rgba(201, 168, 76, 0.7);
+    background: #0c0a10;
+    padding: 0 8px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     UNIT CARD SYSTEM — Fantasy Card with Rarity Borders
+     ═══════════════════════════════════════════════════════════════ */
+  .unit-card {
+    @apply relative flex flex-col items-center p-2.5 rounded-xl transition-all duration-200 cursor-pointer;
+    background: rgba(17, 14, 23, 0.85);
+    border: 2px solid rgba(201, 168, 76, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  .unit-card:hover {
+    border-color: rgba(201, 168, 76, 0.5);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(201, 168, 76, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .unit-card.selected-blue {
+    border-color: rgba(59, 130, 246, 0.7);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 4px 16px rgba(0, 0, 0, 0.6);
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .unit-card.selected-red {
+    border-color: rgba(239, 68, 68, 0.7);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 0 4px 16px rgba(0, 0, 0, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     CREST / SHIELD BADGES — Team Identity
+     ═══════════════════════════════════════════════════════════════ */
+  .team-crest {
+    @apply relative flex flex-col items-center justify-center;
+    width: 56px;
+    height: 64px;
+    clip-path: polygon(50% 0%, 100% 20%, 100% 80%, 50% 100%, 0% 80%, 0% 20%);
+  }
+
+  .team-crest-blue {
+    @apply team-crest;
+    background: linear-gradient(180deg, #3b82f6 0%, #1e40af 100%);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+
+  .team-crest-red {
+    @apply team-crest;
+    background: linear-gradient(180deg, #ef4444 0%, #991b1b 100%);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     HP BAR STYLES
+     ═══════════════════════════════════════════════════════════════ */
+  .hp-bar-track {
+    @apply w-full rounded-full overflow-hidden;
+    height: 8px;
+    background: rgba(12, 10, 16, 0.8);
+    border: 1px solid rgba(201, 168, 76, 0.15);
+  }
+
+  .hp-bar-fill-blue {
+    @apply h-full rounded-full transition-all duration-300;
+    background: linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  }
+
+  .hp-bar-fill-red {
+    @apply h-full rounded-full transition-all duration-300;
+    background: linear-gradient(90deg, #991b1b, #ef4444, #f87171);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MODAL OVERLAY
+     ═══════════════════════════════════════════════════════════════ */
+  .fantasy-modal-overlay {
+    @apply absolute inset-0 z-40 flex items-center justify-center p-4;
+    background: rgba(6, 5, 8, 0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  .fantasy-modal {
+    @apply fantasy-panel-ornate p-6 flex flex-col gap-4;
+    max-height: 85vh;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SPLASH SCREEN STYLES
+     ═══════════════════════════════════════════════════════════════ */
+  .splash-container {
+    @apply absolute inset-0 z-50 flex flex-col items-center justify-center;
+    background: radial-gradient(ellipse at center, #18141f 0%, #0c0a10 40%, #060508 100%);
+    overflow: hidden;
+  }
+
+  .splash-ember {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f5d06e 0%, #c9a84c 40%, transparent 70%);
+    pointer-events: none;
+    animation: emberRise linear infinite;
+  }
+
+  @keyframes emberRise {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(0.5);
+    }
+    10% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 0.6;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-100vh) scale(0) rotate(720deg);
+    }
+  }
+
+  .splash-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(6, 5, 8, 0.7) 100%);
+    pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOOLTIP STYLES
+     ═══════════════════════════════════════════════════════════════ */
+  .fantasy-tooltip {
+    @apply absolute bottom-full mb-3 hidden group-hover:block w-52 p-3 z-30 pointer-events-none;
+    background: rgba(12, 10, 16, 0.97);
+    border: 2px solid rgba(201, 168, 76, 0.35);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 15px rgba(201, 168, 76, 0.15);
+  }
+
+  .fantasy-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(201, 168, 76, 0.35);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     VICTORY SCREEN ENHANCEMENTS
+     ═══════════════════════════════════════════════════════════════ */
+  @keyframes victoryGlow {
+    0%, 100% { filter: brightness(1); text-shadow: 0 0 20px rgba(201, 168, 76, 0.4); }
+    50% { filter: brightness(1.2); text-shadow: 0 0 40px rgba(201, 168, 76, 0.7); }
+  }
+
+  .victory-title {
+    animation: victoryGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes victoryRays {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .victory-rays {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    transform: translate(-50%, -50%);
+    background: conic-gradient(from 0deg, transparent, rgba(201, 168, 76, 0.08), transparent, rgba(201, 168, 76, 0.08), transparent, rgba(201, 168, 76, 0.08), transparent, rgba(201, 168, 76, 0.08), transparent);
+    border-radius: 50%;
+    animation: victoryRays 20s linear infinite;
+    pointer-events: none;
+  }
+}
+
+@layer utilities {
+  .text-gold-gradient {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, #c9a84c 0%, #f5d06e 40%, #c9a84c 80%);
+  }
+
+  .text-crimson-gradient {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, #c41e3a 0%, #e85a6d 50%, #c41e3a 100%);
+  }
+
+  .text-parchment-gradient {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, #f0e8d4, #e3d5b2, #f0e8d4);
+  }
+
+  .border-ornate {
+    border-image: linear-gradient(180deg, rgba(201, 168, 76, 0.5) 0%, rgba(201, 168, 76, 0.2) 50%, rgba(201, 168, 76, 0.5) 100%) 1;
+  }
+}

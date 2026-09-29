@@ -1,0 +1,62 @@
+export const ENVIRONMENTS = {
+  plains: {
+    id: 'plains',
+    name: 'Emerald Plains',
+    desc: 'Sunlit grassy hills with warm ambient lighting',
+    skyColor: 0x7dd3fc,
+    fogColor: 0x7dd3fc,
+    fogDensity: 0.006,
+    groundColor: 0x4ade80,
+    sunColor: 0xfffbeb,
+    sunIntensity: 1.4,
+    sunPosition: { x: 30, y: 45, z: 25 },
+    ambientColor: 0xffffff,
+    ambientIntensity: 0.7,
+    ambientType: 'plains'
+  },
+  volcano: {
+    id: 'volcano',
+    name: 'Volcanic Realm',
+    desc: 'Dark obsidian rock with molten magma cracks and fiery red sky',
+    skyColor: 0x1c0a0a,
+    fogColor: 0x2a0808,
+    fogDensity: 0.012,
+    groundColor: 0x262626,
+    sunColor: 0xf97316,
+    sunIntensity: 1.8,
+    sunPosition: { x: 20, y: 35, z: 20 },
+    ambientColor: 0xef4444,
+    ambientIntensity: 0.6,
+    ambientType: 'volcano'
+  },
+  snow: {
+    id: 'snow',
+    name: 'Frostbite Summit',
+    desc: 'Snow-capped frozen tundra with icy blue atmosphere',
+    skyColor: 0xdbeafe,
+    fogColor: 0xbfdbfe,
+    fogDensity: 0.009,
+    groundColor: 0xe2e8f0,
+    sunColor: 0x38bdf8,
+    sunIntensity: 1.3,
+    sunPosition: { x: 25, y: 50, z: 30 },
+    ambientColor: 0x93c5fd,
+    ambientIntensity: 0.8,
+    ambientType: 'snow'
+  },
+  desert: {
+    id: 'desert',
+    name: 'Desert Oasis',
+    desc: 'Golden sand dunes with glaring desert sun',
+    skyColor: 0xfef08a,
+    fogColor: 0xfde047,
+    fogDensity: 0.007,
+    groundColor: 0xeab308,
+    sunColor: 0xf59e0b,
+    sunIntensity: 1.6,
+    sunPosition: { x: 35, y: 40, z: 15 },
+    ambientColor: 0xfef08a,
+    ambientIntensity: 0.7,
+    ambientType: 'desert'
+  }
+};
