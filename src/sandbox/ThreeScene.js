@@ -1199,46 +1199,22 @@ export class ThreeSceneManager {
 
     if (this.renderer) {
       if (level === 'LOW') {
-        this.renderer.shadowMap.enabled = false;
         this.renderer.setPixelRatio(1.0);
       } else if (level === 'MEDIUM') {
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2));
       } else if (level === 'HIGH') {
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       } else { // ULTRA
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
       }
     }
 
     if (this.sunLight) {
-      if (level === 'LOW') {
-        this.sunLight.castShadow = false;
-        if (this.sunLight.shadow && this.sunLight.shadow.map) {
-          this.sunLight.shadow.map.dispose();
-          this.sunLight.shadow.map = null;
-        }
-      } else {
-        this.sunLight.castShadow = true;
-        if (this.sunLight.shadow) {
-          if (level === 'MEDIUM') {
-            this.sunLight.shadow.mapSize.width = 1024;
-            this.sunLight.shadow.mapSize.height = 1024;
-          } else if (level === 'ULTRA') {
-            this.sunLight.shadow.mapSize.width = 2048;
-            this.sunLight.shadow.mapSize.height = 2048;
-          } else {
-            this.sunLight.shadow.mapSize.width = 1536;
-            this.sunLight.shadow.mapSize.height = 1536;
-          }
-          this.sunLight.shadow.map?.dispose();
-          this.sunLight.shadow.map = null;
-        }
+      this.sunLight.castShadow = (level !== 'LOW');
+      if (this.sunLight.shadow) {
+        const size = level === 'LOW' ? 512 : (level === 'MEDIUM' ? 1024 : (level === 'ULTRA' ? 2048 : 1536));
+        this.sunLight.shadow.mapSize.width = size;
+        this.sunLight.shadow.mapSize.height = size;
       }
     }
 

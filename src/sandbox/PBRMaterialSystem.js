@@ -24,11 +24,6 @@ class PBRMaterialManager {
 
   setQuality(qualityLevel) {
     this.quality = qualityLevel;
-    // Clear caches when quality changes so new resolution is used
-    this.textureCache.forEach(tex => tex.dispose());
-    this.textureCache.clear();
-    this.materialCache.forEach(mat => mat.dispose());
-    this.materialCache.clear();
   }
 
   getResolution() {
