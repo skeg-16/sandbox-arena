@@ -77,24 +77,26 @@ export class ActiveRagdollUnit {
     const initialYaw = this.teamId === 'blue' ? Math.PI / 2 : -Math.PI / 2;
     const halfYaw = initialYaw * 0.5;
 
-    const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(position.x, position.y + capsuleHeight / 2 + capsuleRadius, position.z)
-      .setRotation({ x: 0, y: Math.sin(halfYaw), z: 0, w: Math.cos(halfYaw) })
-      .setAdditionalMass(mass)
-      .setLinearDamping(0.8)
-      .setAngularDamping(2.5)
-      .setCanSleep(true);
+    if (this.world && RAPIER) {
+      const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(position.x, position.y + capsuleHeight / 2 + capsuleRadius, position.z)
+        .setRotation({ x: 0, y: Math.sin(halfYaw), z: 0, w: Math.cos(halfYaw) })
+        .setAdditionalMass(mass)
+        .setLinearDamping(0.8)
+        .setAngularDamping(2.5)
+        .setCanSleep(true);
 
-    this.body = this.world.createRigidBody(bodyDesc);
+      this.body = this.world.createRigidBody(bodyDesc);
 
-    const colliderDesc = RAPIER.ColliderDesc.capsule(capsuleHeight / 2, capsuleRadius)
-      .setFriction(0.6)
-      .setRestitution(0.1);
+      const colliderDesc = RAPIER.ColliderDesc.capsule(capsuleHeight / 2, capsuleRadius)
+        .setFriction(0.6)
+        .setRestitution(0.1);
 
-    this.collider = this.world.createCollider(colliderDesc, this.body);
+      this.collider = this.world.createCollider(colliderDesc, this.body);
 
-    // Lock angular axes except Y to keep unit mostly upright while alive (Inverted Pendulum concept)
-    this.body.setEnabledRotations(false, true, false, true);
+      // Lock angular axes except Y to keep unit mostly upright while alive (Inverted Pendulum concept)
+      this.body.setEnabledRotations(false, true, false, true);
+    }
 
     // ----------------------------------------------------
     // 2. REALISTIC PBR HUMANOID PIPELINE
